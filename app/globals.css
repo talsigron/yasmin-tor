@@ -3,136 +3,357 @@
 @theme inline {
   --color-gold: #FCD34D;
   --color-gold-dark: #D4A017;
-  --color-bg: #0a0a0a;
-  --color-card: #111111;
+  --color-bg: #050505;
+  --color-card: rgba(255, 255, 255, 0.03);
 }
 
+/* ===== CSS Custom Properties ===== */
+:root {
+  --c-bg: #050505;
+  --c-gold: #FCD34D;
+  --c-amber: #F59E0B;
+  --c-gold-dark: #D4A017;
+  --c-text: #ffffff;
+  --c-text-muted: #9CA3AF;
+  --c-card-bg: rgba(255, 255, 255, 0.03);
+  --c-card-border: rgba(252, 211, 77, 0.1);
+  --c-glow: rgba(252, 211, 77, 0.15);
+}
+
+/* ===== Base ===== */
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  background: #0a0a0a;
-  color: #ffffff;
+  background: var(--c-bg);
+  color: var(--c-text);
+  overflow-x: hidden;
 }
 
-/* Fade-in animation for scroll reveal */
-.fade-in-section {
+/* ===== Scroll Reveal ===== */
+.fade-section {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Only hide when JS observer is active */
-.fade-in-section.js-observed {
+.fade-section.js-observed {
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateY(50px);
 }
 
-.fade-in-section.js-observed.is-visible {
+.fade-section.js-observed.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-/* Gold glow effect */
-.gold-glow {
-  box-shadow: 0 0 30px rgba(252, 211, 77, 0.2), 0 0 60px rgba(252, 211, 77, 0.1);
+/* ===== Animated Gradient Text ===== */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-.gold-glow-strong {
-  box-shadow: 0 0 40px rgba(252, 211, 77, 0.3), 0 0 80px rgba(252, 211, 77, 0.15);
+.gradient-text-animated {
+  background: linear-gradient(
+    90deg,
+    #FCD34D 0%,
+    #F59E0B 20%,
+    #ffffff 40%,
+    #FCD34D 60%,
+    #F59E0B 80%,
+    #FCD34D 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 4s ease-in-out infinite;
 }
 
+/* ===== Gold Text Glow ===== */
 .gold-text-glow {
-  text-shadow: 0 0 40px rgba(252, 211, 77, 0.3), 0 0 80px rgba(252, 211, 77, 0.15);
+  text-shadow: 0 0 40px rgba(252, 211, 77, 0.3), 0 0 80px rgba(252, 211, 77, 0.1);
 }
 
-/* Gold gradient button */
+/* ===== Gold Button ===== */
 .btn-gold {
-  background: linear-gradient(135deg, #FCD34D, #D4A017);
-  color: #0a0a0a;
+  background: linear-gradient(135deg, #FCD34D, #F59E0B, #D4A017);
+  background-size: 200% 200%;
+  color: #050505;
   font-weight: 700;
   border-radius: 9999px;
   padding: 0.875rem 2.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 0 30px rgba(252, 211, 77, 0.2), 0 0 60px rgba(252, 211, 77, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-gold::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.btn-gold:hover::before {
+  left: 100%;
 }
 
 .btn-gold:hover {
-  transform: scale(1.02);
-  box-shadow: 0 0 40px rgba(252, 211, 77, 0.4), 0 0 80px rgba(252, 211, 77, 0.2);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 0 50px rgba(252, 211, 77, 0.4), 0 0 100px rgba(252, 211, 77, 0.2);
+  background-position: 100% 0;
 }
 
-/* Glass effect for navbar */
-.glass-nav {
-  background: rgba(10, 10, 10, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(252, 211, 77, 0.1);
-}
-
-/* Feature card */
-.feature-card {
-  background: #111111;
-  border: 1px solid #222222;
-  border-radius: 1rem;
-  padding: 2rem;
-  transition: all 0.3s ease;
-}
-
-.feature-card:hover {
-  border-color: rgba(252, 211, 77, 0.3);
-  box-shadow: 0 0 30px rgba(252, 211, 77, 0.1);
-}
-
-/* Step connector line */
-.step-line {
-  position: absolute;
-  top: 50%;
-  right: 100%;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(to left, rgba(252, 211, 77, 0.3), transparent);
-}
-
-/* Pricing card */
-.pricing-card {
-  background: #111111;
-  border: 1px solid rgba(252, 211, 77, 0.2);
-  border-radius: 1.5rem;
-  box-shadow: 0 0 40px rgba(252, 211, 77, 0.15), 0 0 80px rgba(252, 211, 77, 0.05);
-}
-
-/* FAQ accordion */
-.faq-item {
-  background: #111111;
-  border: 1px solid #222222;
-  border-radius: 0.75rem;
-  transition: all 0.3s ease;
-}
-
-.faq-item:hover {
-  border-color: rgba(252, 211, 77, 0.2);
-}
-
-/* Decorative glow circles */
-.glow-circle {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(252, 211, 77, 0.15), transparent 70%);
-  pointer-events: none;
-}
-
-/* Pulse animation for CTA */
+/* ===== Pulse Animation ===== */
 @keyframes pulse-gold {
   0%, 100% {
     box-shadow: 0 0 30px rgba(252, 211, 77, 0.2), 0 0 60px rgba(252, 211, 77, 0.1);
   }
   50% {
-    box-shadow: 0 0 50px rgba(252, 211, 77, 0.3), 0 0 100px rgba(252, 211, 77, 0.15);
+    box-shadow: 0 0 60px rgba(252, 211, 77, 0.35), 0 0 120px rgba(252, 211, 77, 0.15);
   }
 }
 
 .pulse-gold {
   animation: pulse-gold 3s ease-in-out infinite;
+}
+
+/* ===== Glass Navbar ===== */
+.glass-nav {
+  background: rgba(5, 5, 5, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(252, 211, 77, 0.08);
+}
+
+/* ===== Glassmorphism Card ===== */
+.glass-card {
+  background: var(--c-card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--c-card-border);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  perspective: 800px;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(252, 211, 77, 0.06),
+    transparent 40%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.glass-card:hover::before {
+  opacity: 1;
+}
+
+.glass-card:hover {
+  border-color: rgba(252, 211, 77, 0.25);
+  box-shadow: 0 8px 40px rgba(252, 211, 77, 0.08), 0 0 80px rgba(252, 211, 77, 0.04);
+}
+
+/* ===== Glowing Border Animation ===== */
+@keyframes border-glow-rotate {
+  0% { --border-angle: 0deg; }
+  100% { --border-angle: 360deg; }
+}
+
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.glow-border-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 1.5rem;
+  overflow: hidden;
+}
+
+.glow-border-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    transparent 30%,
+    rgba(252, 211, 77, 0.5) 50%,
+    transparent 70%
+  );
+  animation: border-glow-rotate 4s linear infinite;
+  z-index: -1;
+}
+
+.glow-border-card::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: calc(1.5rem - 2px);
+  background: rgba(5, 5, 5, 0.95);
+  z-index: -1;
+}
+
+/* ===== FAQ Accordion ===== */
+.faq-item {
+  background: var(--c-card-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  transition: all 0.4s ease;
+}
+
+.faq-item:hover {
+  border-color: rgba(252, 211, 77, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ===== Particle Canvas ===== */
+.particle-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== Section Divider ===== */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(252, 211, 77, 0.15), transparent);
+  margin: 0 auto;
+  max-width: 80%;
+}
+
+/* ===== Steps Connecting Line ===== */
+@keyframes line-draw {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.step-line-animated {
+  height: 2px;
+  background: linear-gradient(90deg, rgba(252, 211, 77, 0.4), rgba(252, 211, 77, 0.1));
+  animation: line-draw 1.5s ease-out forwards;
+}
+
+/* ===== Step Number Glow ===== */
+.step-number {
+  position: relative;
+}
+
+.step-number::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(252, 211, 77, 0.15), transparent 70%);
+  z-index: -1;
+  animation: pulse-gold 3s ease-in-out infinite;
+}
+
+/* ===== Counter Animation ===== */
+@keyframes count-glow {
+  0%, 100% { text-shadow: 0 0 30px rgba(252, 211, 77, 0.3); }
+  50% { text-shadow: 0 0 60px rgba(252, 211, 77, 0.5), 0 0 120px rgba(252, 211, 77, 0.2); }
+}
+
+.price-counter {
+  animation: count-glow 3s ease-in-out infinite;
+}
+
+/* ===== Hero Spotlight ===== */
+.hero-spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(
+    600px circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%),
+    rgba(252, 211, 77, 0.07),
+    transparent 40%
+  );
+  transition: background 0.1s ease;
+}
+
+/* ===== Dot Grid Pattern ===== */
+.dot-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(252, 211, 77, 0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ===== Float Animation ===== */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes float-delayed {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+.float-1 { animation: float 6s ease-in-out infinite; }
+.float-2 { animation: float-delayed 8s ease-in-out infinite 1s; }
+.float-3 { animation: float 7s ease-in-out infinite 2s; }
+
+/* ===== Stagger Reveal ===== */
+.stagger-1 { transition-delay: 0ms !important; }
+.stagger-2 { transition-delay: 120ms !important; }
+.stagger-3 { transition-delay: 240ms !important; }
+.stagger-4 { transition-delay: 360ms !important; }
+.stagger-5 { transition-delay: 480ms !important; }
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(252, 211, 77, 0.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(252, 211, 77, 0.4);
+}
+
+/* ===== Selection ===== */
+::selection {
+  background: rgba(252, 211, 77, 0.3);
+  color: #ffffff;
 }
