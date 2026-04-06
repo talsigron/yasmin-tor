@@ -58,6 +58,30 @@ const pricingFeatures = [
   "ללא הגבלת לקוחות",
 ];
 
+const testimonials = [
+  {
+    name: "מטר סיגרון",
+    title: "Menta Nail - סטודיו לציפורניים",
+    initials: "מס",
+    quote:
+      "מאז שעברתי ליסמין תור החיים שלי השתנו. לקוחות קובעות לבד, אני לא מפספסת תורים, והכל מסודר במקום אחד. ממליצה בחום!",
+  },
+  {
+    name: "אורן דוד",
+    title: "David Barber - מספרה",
+    initials: "אד",
+    quote:
+      "פשוט וקל לשימוש. הלקוחות שלי אוהבים את זה ואני חוסך שעות של טלפונים כל שבוע. שווה כל שקל.",
+  },
+  {
+    name: "שירה לוי",
+    title: "שירה ביוטי - קוסמטיקה",
+    initials: "של",
+    quote:
+      "ניסיתי כמה מערכות לפני. יסמין תור הכי פשוטה והכי יפה. גם המחיר משתלם בטירוף.",
+  },
+];
+
 const faqItems = [
   {
     question: "האם צריך ידע טכני?",
@@ -77,7 +101,13 @@ const faqItems = [
   },
   {
     question: "מה קורה אחרי תקופת הניסיון?",
-    answer: "אם מתאים לך - ממשיכים ב-50 שקלים לחודש. אם לא - פשוט לא ממשיכים.",
+    answer:
+      "אם מתאים לך - ממשיכים ב-50 שקלים לחודש. אם לא - פשוט לא ממשיכים.",
+  },
+  {
+    question: "כמה זה עולה?",
+    answer:
+      "50\u20AA לחודש, הכל כלול. החודש הראשון חינם לגמרי, בלי כרטיס אשראי. וגם אפשר לבטל בכל עת.",
   },
 ];
 
@@ -100,14 +130,11 @@ function useFadeIn() {
           }
         });
       },
-      { threshold: 0.06, rootMargin: "0px 0px -30px 0px" }
+      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
     );
 
-    const elements = node.querySelectorAll(".fade-section");
-    elements.forEach((el) => {
-      el.classList.add("js-observed");
-      observer.observe(el);
-    });
+    const elements = node.querySelectorAll(".fade-up");
+    elements.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
   }, []);
@@ -115,41 +142,17 @@ function useFadeIn() {
   return ref;
 }
 
-function useMousePosition() {
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const rafRef = useRef<number>(0);
-
-  useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = requestAnimationFrame(() => {
-        setPos({ x: e.clientX, y: e.clientY });
-      });
-    };
-
-    window.addEventListener("mousemove", handleMove);
-    return () => {
-      window.removeEventListener("mousemove", handleMove);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
-  return pos;
-}
-
 function useCountUp(target: number, duration: number, trigger: boolean) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
     if (!trigger) return;
-    let start = 0;
     const startTime = performance.now();
 
     const step = (timestamp: number) => {
       const progress = Math.min((timestamp - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      start = Math.floor(eased * target);
-      setCount(start);
+      setCount(Math.floor(eased * target));
       if (progress < 1) {
         requestAnimationFrame(step);
       }
@@ -162,435 +165,266 @@ function useCountUp(target: number, duration: number, trigger: boolean) {
 }
 
 /* ===================================================================
-   CUSTOM CURSOR
-   =================================================================== */
-
-function CustomCursor() {
-  const innerRef = useRef<HTMLDivElement>(null);
-  const outerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
-    if (isTouchDevice) return;
-
-    let mouseX = 0;
-    let mouseY = 0;
-    let outerX = 0;
-    let outerY = 0;
-
-    const handleMove = (e: MouseEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      if (innerRef.current) {
-        innerRef.current.style.left = `${mouseX}px`;
-        innerRef.current.style.top = `${mouseY}px`;
-      }
-    };
-
-    const animate = () => {
-      outerX += (mouseX - outerX) * 0.12;
-      outerY += (mouseY - outerY) * 0.12;
-      if (outerRef.current) {
-        outerRef.current.style.left = `${outerX}px`;
-        outerRef.current.style.top = `${outerY}px`;
-      }
-      requestAnimationFrame(animate);
-    };
-
-    window.addEventListener("mousemove", handleMove);
-    const animId = requestAnimationFrame(animate);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMove);
-      cancelAnimationFrame(animId);
-    };
-  }, []);
-
-  return (
-    <>
-      <div ref={innerRef} className="cursor-glow" />
-      <div ref={outerRef} className="cursor-glow-outer" />
-    </>
-  );
-}
-
-/* ===================================================================
-   PARTICLE BACKGROUND (enhanced - more particles, denser connections)
-   =================================================================== */
-
-function ParticleBackground() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animId: number;
-    let particles: Array<{
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      size: number;
-      alpha: number;
-      baseAlpha: number;
-      pulse: number;
-    }> = [];
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-
-    const init = () => {
-      resize();
-      particles = [];
-      const count = Math.min(Math.floor((canvas.width * canvas.height) / 10000), 140);
-      for (let i = 0; i < count; i++) {
-        const baseAlpha = Math.random() * 0.35 + 0.08;
-        particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.2,
-          vy: (Math.random() - 0.5) * 0.2,
-          size: Math.random() * 2 + 0.5,
-          alpha: baseAlpha,
-          baseAlpha,
-          pulse: Math.random() * Math.PI * 2,
-        });
-      }
-    };
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      for (const p of particles) {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.pulse += 0.015;
-        p.alpha = p.baseAlpha + Math.sin(p.pulse) * 0.12;
-
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(252, 211, 77, ${Math.max(0, p.alpha)})`;
-        ctx.fill();
-      }
-
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 140) {
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(252, 211, 77, ${0.06 * (1 - dist / 140)})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      }
-
-      animId = requestAnimationFrame(draw);
-    };
-
-    init();
-    draw();
-
-    window.addEventListener("resize", init);
-    return () => {
-      window.removeEventListener("resize", init);
-      cancelAnimationFrame(animId);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="particle-canvas" />;
-}
-
-/* ===================================================================
-   NAVBAR
+   COMPONENTS
    =================================================================== */
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const links = [
+    { label: "איך זה עובד", href: "#how" },
+    { label: "מחירון", href: "#pricing" },
+    { label: "המלצות", href: "#testimonials" },
+    { label: "שאלות נפוצות", href: "#faq" },
+  ];
 
   return (
     <nav
-      className={`fixed top-0 right-0 left-0 z-50 transition-all duration-500 ${
+      className={`fixed top-0 right-0 left-0 z-50 transition-all duration-300 ${
         scrolled ? "glass-nav" : "bg-transparent"
       }`}
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex h-16 items-center justify-between sm:h-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+        {/* Logo */}
+        <a
+          href="#"
+          className="text-xl font-bold"
+          style={{ color: "#D4A017" }}
+        >
+          יסמין תור
+        </a>
+
+        {/* Desktop links */}
+        <div className="hidden md:flex items-center gap-8">
+          {links.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              className="text-sm font-medium text-[#6B7280] hover:text-[#D4A017] transition-colors"
+            >
+              {l.label}
+            </a>
+          ))}
+        </div>
+
+        {/* CTA + Mobile toggle */}
+        <div className="flex items-center gap-3">
           <a
-            href="#"
-            className="text-xl font-bold sm:text-2xl gradient-text-animated"
-            style={{ WebkitTextFillColor: "transparent" }}
+            href="#pricing"
+            className="hidden md:inline-block btn-gold text-sm py-2.5 px-5"
           >
-            יסמין תור
+            התחילו בחינם
           </a>
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden p-2 text-[#6B7280]"
+            aria-label="תפריט"
+          >
+            <svg
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              {menuOpen ? (
+                <path d="M6 6l12 12M6 18L18 6" />
+              ) : (
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
+      </div>
 
-          <div className="hidden items-center gap-8 md:flex">
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="md:hidden bg-white border-t border-[#E5E7EB] px-4 pb-4 pt-2">
+          {links.map((l) => (
             <a
-              href="#how"
-              className="text-sm text-[#9CA3AF] transition-colors duration-300 hover:text-[#FCD34D]"
+              key={l.href}
+              href={l.href}
+              onClick={() => setMenuOpen(false)}
+              className="block py-2.5 text-sm font-medium text-[#6B7280] hover:text-[#D4A017]"
             >
-              איך זה עובד
+              {l.label}
             </a>
-            <a
-              href="#pricing"
-              className="text-sm text-[#9CA3AF] transition-colors duration-300 hover:text-[#FCD34D]"
-            >
-              מחירון
-            </a>
-            <a
-              href="#faq"
-              className="text-sm text-[#9CA3AF] transition-colors duration-300 hover:text-[#FCD34D]"
-            >
-              שאלות נפוצות
-            </a>
-          </div>
-
+          ))}
           <a
-            href="#cta"
-            className="btn-gold px-4 py-2 text-sm sm:px-6 sm:py-2.5 sm:text-base"
+            href="#pricing"
+            onClick={() => setMenuOpen(false)}
+            className="block mt-2 btn-gold text-center text-sm py-2.5"
           >
             התחילו בחינם
           </a>
         </div>
-      </div>
+      )}
     </nav>
   );
 }
 
-/* ===================================================================
-   PHONE MOCKUP
-   =================================================================== */
-
-function PhoneMockup() {
-  return (
-    <div className="phone-mockup relative mx-auto w-[220px] sm:w-[260px]">
-      {/* Phone frame */}
-      <div
-        className="relative overflow-hidden rounded-[32px] border-2 border-[rgba(252,211,77,0.25)] bg-[#0a0a0a]"
-        style={{
-          boxShadow:
-            "0 25px 60px rgba(252,211,77,0.12), 0 0 80px rgba(252,211,77,0.06), inset 0 0 30px rgba(252,211,77,0.03)",
-          aspectRatio: "9/18",
-        }}
-      >
-        {/* Notch */}
-        <div className="phone-notch" />
-
-        {/* Screen content */}
-        <div className="flex h-full flex-col px-4 pt-10 pb-4">
-          {/* Header bar */}
-          <div className="mb-4 flex items-center justify-between">
-            <div className="h-2.5 w-12 rounded-full bg-[rgba(252,211,77,0.3)]" />
-            <div className="h-6 w-6 rounded-full bg-[rgba(252,211,77,0.15)] flex items-center justify-center">
-              <div className="h-3 w-3 rounded-full bg-[rgba(252,211,77,0.4)]" />
-            </div>
-          </div>
-
-          {/* Calendar mockup */}
-          <div className="mb-3 rounded-xl bg-[rgba(252,211,77,0.05)] border border-[rgba(252,211,77,0.1)] p-3">
-            <div className="mb-2 h-2 w-16 rounded-full bg-[rgba(252,211,77,0.25)]" />
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: 14 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-4 w-4 rounded-md ${
-                    i === 5 || i === 9
-                      ? "bg-[rgba(252,211,77,0.5)]"
-                      : "bg-[rgba(255,255,255,0.06)]"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Appointment slots */}
-          {[0.4, 0.25, 0.3].map((opacity, i) => (
-            <div
-              key={i}
-              className="mb-2 flex items-center gap-2 rounded-lg bg-[rgba(252,211,77,0.04)] border border-[rgba(252,211,77,0.08)] p-2"
-            >
-              <div
-                className="h-7 w-7 rounded-lg flex-shrink-0"
-                style={{ backgroundColor: `rgba(252,211,77,${opacity})` }}
-              />
-              <div className="flex-1 space-y-1">
-                <div className="h-1.5 w-3/4 rounded-full bg-[rgba(255,255,255,0.15)]" />
-                <div className="h-1.5 w-1/2 rounded-full bg-[rgba(255,255,255,0.08)]" />
-              </div>
-            </div>
-          ))}
-
-          {/* Bottom CTA button */}
-          <div className="mt-auto">
-            <div className="h-8 w-full rounded-full bg-gradient-to-l from-[#FCD34D] to-[#F59E0B] flex items-center justify-center">
-              <div className="h-1.5 w-14 rounded-full bg-[rgba(5,5,5,0.4)]" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ===================================================================
-   HERO SECTION
-   =================================================================== */
-
 function HeroSection() {
-  const heroRef = useRef<HTMLElement>(null);
-  const mouse = useMousePosition();
-  const [subtitleVisible, setSubtitleVisible] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSubtitleVisible(true), 600);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const hero = heroRef.current;
-    if (!hero) return;
-    const rect = hero.getBoundingClientRect();
-    const x = mouse.x - rect.left;
-    const y = mouse.y - rect.top;
-    hero.style.setProperty("--spotlight-x", `${x}px`);
-    hero.style.setProperty("--spotlight-y", `${y}px`);
-  }, [mouse]);
-
   return (
-    <section
-      ref={heroRef}
-      className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 pt-20"
-    >
-      {/* Spotlight overlay */}
-      <div className="hero-spotlight" />
+    <section className="relative min-h-screen flex items-center pt-20 pb-16 overflow-hidden">
+      {/* Background blobs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="blob-1 absolute rounded-full"
+          style={{
+            width: 500,
+            height: 500,
+            top: "-10%",
+            right: "-5%",
+            background:
+              "radial-gradient(circle, rgba(212,160,23,0.08), transparent 70%)",
+          }}
+        />
+        <div
+          className="blob-2 absolute rounded-full"
+          style={{
+            width: 400,
+            height: 400,
+            bottom: "10%",
+            left: "5%",
+            background:
+              "radial-gradient(circle, rgba(245,158,11,0.06), transparent 70%)",
+          }}
+        />
+        <div
+          className="blob-3 absolute rounded-full"
+          style={{
+            width: 300,
+            height: 300,
+            top: "40%",
+            left: "40%",
+            background:
+              "radial-gradient(circle, rgba(212,160,23,0.05), transparent 70%)",
+          }}
+        />
+      </div>
 
-      {/* Animated grid mesh */}
-      <div className="animated-mesh" />
-
-      {/* Dot grid */}
-      <div className="dot-grid" />
-
-      {/* Floating glow orbs - bigger, more visible */}
-      <div
-        className="float-1 pointer-events-none absolute -right-20 -top-20 h-[600px] w-[600px] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(252,211,77,0.18), transparent 65%)",
-        }}
-      />
-      <div
-        className="float-2 pointer-events-none absolute -bottom-32 -left-32 h-[700px] w-[700px] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(245,158,11,0.14), transparent 65%)",
-        }}
-      />
-      <div
-        className="float-3 pointer-events-none absolute left-1/3 top-1/4 h-[400px] w-[400px] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(252,211,77,0.12), transparent 65%)",
-        }}
-      />
-      <div
-        className="float-4 pointer-events-none absolute right-1/4 bottom-1/4 h-[350px] w-[350px] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(252,211,77,0.1), transparent 65%)",
-        }}
-      />
-
-      {/* Content */}
-      <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="flex flex-col items-center gap-12 lg:flex-row lg:items-center lg:gap-16">
-          {/* Text content */}
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 w-full">
+        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+          {/* Text content - right side in RTL */}
           <div className="flex-1 text-center lg:text-right">
-            <div className="mb-8 inline-block rounded-full border border-[rgba(252,211,77,0.25)] bg-[rgba(252,211,77,0.06)] px-6 py-2.5 backdrop-blur-sm">
-              <span className="text-sm font-medium text-[#FCD34D] sm:text-base">
-                14 יום ניסיון חינם
-              </span>
-            </div>
+            <span className="badge-gold inline-block mb-6">
+              חודש ראשון חינם 🎁
+            </span>
 
-            <h1 className="gradient-text-animated mb-8 text-6xl font-black leading-[1.1] sm:text-7xl md:text-8xl lg:text-9xl">
-              המערכת
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
+              <span className="gold-gradient-text">ניהול התורים שלך</span>
               <br />
-              שתנהל לך
-              <br />
-              את התורים
+              <span className="text-[#1A1A1A]">ברמה אחרת</span>
             </h1>
 
-            <div
-              className={`mx-auto mb-12 max-w-2xl transition-all duration-1000 lg:mx-0 ${
-                subtitleVisible
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-4"
-              }`}
-            >
-              <p className="text-lg leading-relaxed text-[#9CA3AF] sm:text-xl md:text-2xl">
-                קביעת תורים, ניהול לקוחות, תשלומים ועוד - הכל במקום אחד.
-                <br className="hidden sm:block" />
-                בלי אפליקציה, בלי התקנה.
-              </p>
-            </div>
+            <p className="text-lg sm:text-xl text-[#6B7280] max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed">
+              הלקוחות קובעים תורים בקלות, אתם מנהלים הכל ממקום אחד. בלי
+              אפליקציה, בלי התקנה, בלי כאב ראש.
+            </p>
 
-            <div className="flex flex-col items-center gap-5 lg:items-start">
+            <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
               <a
-                href="#cta"
-                className="btn-gold pulse-gold px-10 py-4 text-lg font-bold sm:px-14 sm:py-5 sm:text-xl"
+                href="#pricing"
+                className="btn-gold text-base py-3.5 px-8"
               >
-                התחילו תקופת ניסיון חינם
+                התחילו חודש ניסיון חינם
               </a>
-              <p className="text-sm text-[#9CA3AF]">
-                ללא כרטיס אשראי. ללא התחייבות.
-              </p>
             </div>
+
+            <p className="mt-4 text-sm text-[#9CA3AF]">
+              ללא כרטיס אשראי. ללא התחייבות.
+            </p>
           </div>
 
-          {/* Phone mockup */}
-          <div className="hidden flex-shrink-0 lg:block">
-            <PhoneMockup />
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="mt-16 flex justify-center scroll-indicator-bounce">
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-12 w-7 rounded-full border-2 border-[rgba(252,211,77,0.3)] flex items-start justify-center p-1.5">
+          {/* Phone mockup - left side in RTL */}
+          <div className="flex-1 hidden lg:flex justify-center">
+            <div className="phone-mockup relative" style={{ width: 280 }}>
+              {/* Phone frame */}
               <div
-                className="h-2.5 w-2 rounded-full bg-[#FCD34D]"
-                style={{ animation: "float 2s ease-in-out infinite" }}
-              />
+                className="relative rounded-[36px] overflow-hidden border-[6px] border-[#E5E7EB]"
+                style={{
+                  background: "#FFFFFF",
+                  boxShadow:
+                    "0 25px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)",
+                  aspectRatio: "9/19",
+                }}
+              >
+                {/* Notch */}
+                <div
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-[40%] h-[22px] rounded-b-2xl z-10"
+                  style={{ background: "#E5E7EB" }}
+                />
+
+                {/* Screen content */}
+                <div className="pt-8 px-4 pb-4 h-full flex flex-col">
+                  {/* Status bar */}
+                  <div className="flex justify-between items-center text-[10px] text-[#6B7280] mb-4 px-1">
+                    <span>9:41</span>
+                    <span>100%</span>
+                  </div>
+
+                  {/* App header */}
+                  <div
+                    className="text-center py-3 rounded-xl mb-4"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(212,160,23,0.1), rgba(245,158,11,0.08))",
+                    }}
+                  >
+                    <div className="text-sm font-bold text-[#D4A017]">
+                      יסמין תור
+                    </div>
+                    <div className="text-[10px] text-[#6B7280]">
+                      בחרו שירות
+                    </div>
+                  </div>
+
+                  {/* Service items */}
+                  {["תספורת גברים", "תספורת + זקן", "צבע שיער"].map(
+                    (service, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between py-3 px-3 mb-2 rounded-lg"
+                        style={{
+                          background: i === 0 ? "rgba(212,160,23,0.06)" : "transparent",
+                          border:
+                            i === 0
+                              ? "1px solid rgba(212,160,23,0.2)"
+                              : "1px solid #E5E7EB",
+                        }}
+                      >
+                        <span className="text-xs font-medium text-[#1A1A1A]">
+                          {service}
+                        </span>
+                        <span className="text-[10px] text-[#6B7280]">
+                          {[50, 70, 120][i]}\u20AA
+                        </span>
+                      </div>
+                    )
+                  )}
+
+                  {/* Book button */}
+                  <div className="mt-auto">
+                    <div
+                      className="text-center py-2.5 rounded-lg text-xs font-bold text-white"
+                      style={{
+                        background: "linear-gradient(135deg, #D4A017, #F59E0B)",
+                      }}
+                    >
+                      קביעת תור
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <svg
-              className="h-4 w-4 text-[rgba(252,211,77,0.4)]"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 14l-7 7m0 0l-7-7"
-              />
-            </svg>
           </div>
         </div>
       </div>
@@ -598,124 +432,120 @@ function HeroSection() {
   );
 }
 
-/* ===================================================================
-   TILT CARD (for Features)
-   =================================================================== */
+function StatsBar() {
+  const [visible, setVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-function TiltCard({
-  children,
-  className,
-  style,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const handleMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const card = cardRef.current;
-    if (!card) return;
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -8;
-    const rotateY = ((x - centerX) / centerX) * 8;
-
-    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.04, 1.04, 1.04)`;
-    card.style.setProperty("--mouse-x", `${(x / rect.width) * 100}%`);
-    card.style.setProperty("--mouse-y", `${(y / rect.height) * 100}%`);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setVisible(true);
+      },
+      { threshold: 0.3 }
+    );
+    obs.observe(node);
+    return () => obs.disconnect();
   }, []);
 
-  const handleLeave = useCallback(() => {
-    const card = cardRef.current;
-    if (!card) return;
-    card.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)";
-  }, []);
+  const c1 = useCountUp(1200, 2000, visible);
+  const c2 = useCountUp(50, 1500, visible);
+  const c3 = useCountUp(99, 1800, visible);
+
+  const stats = [
+    { value: `${c1.toLocaleString()}+`, label: "תורים נקבעו" },
+    { value: `${c2}+`, label: "עסקים פעילים" },
+    { value: `${c3}%`, label: "שביעות רצון" },
+  ];
 
   return (
-    <div
-      ref={cardRef}
-      className={className}
-      style={{
-        ...style,
-        transition:
-          "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.4s ease",
-        willChange: "transform",
-      }}
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
-    >
-      {children}
+    <div ref={ref} className="stats-strip py-10">
+      <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-around gap-8">
+        {stats.map((s, i) => (
+          <div key={i} className="text-center">
+            <div className="text-3xl sm:text-4xl font-extrabold text-[#D4A017] mb-1">
+              {s.value}
+            </div>
+            <div className="text-sm text-[#6B7280] font-medium">
+              {s.label}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
-
-/* ===================================================================
-   FEATURES SECTION
-   =================================================================== */
 
 function FeaturesSection() {
   return (
-    <section className="relative px-4 py-24 sm:py-32">
-      <div className="section-divider mb-24" />
-      <div className="mx-auto max-w-6xl">
-        <div className="fade-section mb-20 text-center">
-          <h2 className="gold-text-glow mb-6 text-3xl font-bold text-[#FCD34D] sm:text-4xl md:text-5xl lg:text-6xl">
-            למה יסמין תור?
+    <section id="features" className="py-20 lg:py-28">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-14 fade-up">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] mb-4">
+            למה <span className="gold-gradient-text">יסמין תור</span>?
           </h2>
-          <p className="mx-auto max-w-lg text-lg text-[#9CA3AF]">
-            הכלים שיחסכו לך שעות של עבודה כל שבוע
+          <p className="text-[#6B7280] text-lg max-w-xl mx-auto">
+            כל מה שצריך לנהל את העסק שלך במקום אחד
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:gap-8">
-          {features.map((feature, index) => (
-            <TiltCard
-              key={index}
-              className={`fade-section glass-card stagger-${index + 1}`}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((f, i) => (
+            <div
+              key={i}
+              className={`feature-card fade-up stagger-${i + 1}`}
             >
-              <div className="relative z-10">
-                {/* Sparkles inside card */}
-                <div
-                  className="card-sparkle"
-                  style={{
-                    top: "20%",
-                    right: "15%",
-                    animationDelay: `${index * 0.7}s`,
-                  }}
-                />
-                <div
-                  className="card-sparkle"
-                  style={{
-                    top: "60%",
-                    right: "80%",
-                    animationDelay: `${index * 0.7 + 1.5}s`,
-                  }}
-                />
-                <div
-                  className="card-sparkle"
-                  style={{
-                    top: "40%",
-                    right: "50%",
-                    animationDelay: `${index * 0.7 + 0.8}s`,
-                  }}
-                />
+              <div className="text-4xl mb-4">{f.icon}</div>
+              <h3 className="text-lg font-bold text-[#1A1A1A] mb-2">
+                {f.title}
+              </h3>
+              <p className="text-sm text-[#6B7280] leading-relaxed">
+                {f.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
-                {/* Icon with glow */}
-                <div className="icon-glow-circle mb-6 text-5xl">
-                  {feature.icon}
-                </div>
-                <h3 className="mb-3 text-xl font-bold text-white sm:text-2xl">
-                  {feature.title}
+function HowItWorks() {
+  return (
+    <section id="how" className="py-20 lg:py-28" style={{ background: "#F3F4F6" }}>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-14 fade-up">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] mb-4">
+            איך זה <span className="gold-gradient-text">עובד</span>?
+          </h2>
+          <p className="text-[#6B7280] text-lg max-w-xl mx-auto">
+            שלושה צעדים פשוטים ואתם באוויר
+          </p>
+        </div>
+
+        <div className="flex flex-col md:flex-row items-start justify-center gap-8 md:gap-4">
+          {steps.map((s, i) => (
+            <div key={i} className="flex-1 relative fade-up stagger-${i + 1}">
+              <div className="flex flex-col items-center text-center">
+                <div className="step-number mb-5">{s.number}</div>
+
+                {/* Connecting line (desktop only, between steps) */}
+                {i < steps.length - 1 && (
+                  <div
+                    className="hidden md:block absolute top-7 left-0 w-full step-line"
+                    style={{ transform: "translateX(-50%)" }}
+                  />
+                )}
+
+                <h3 className="text-xl font-bold text-[#1A1A1A] mb-2">
+                  {s.title}
                 </h3>
-                <p className="text-base leading-relaxed text-[#9CA3AF] sm:text-lg">
-                  {feature.description}
+                <p className="text-sm text-[#6B7280] leading-relaxed max-w-[260px]">
+                  {s.description}
                 </p>
               </div>
-            </TiltCard>
+            </div>
           ))}
         </div>
       </div>
@@ -723,264 +553,220 @@ function FeaturesSection() {
   );
 }
 
-/* ===================================================================
-   HOW IT WORKS
-   =================================================================== */
-
-function HowItWorksSection() {
-  const [lineVisible, setLineVisible] = useState(false);
-  const sectionRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const node = sectionRef.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setLineVisible(true);
-        }
-      },
-      { threshold: 0.3 }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
+function TestimonialsSection() {
   return (
-    <section id="how" className="relative px-4 py-24 sm:py-32">
-      <div className="section-divider mb-24" />
-      <div className="mx-auto max-w-5xl" ref={sectionRef}>
-        <div className="fade-section mb-20 text-center">
-          <h2 className="gold-text-glow mb-6 text-3xl font-bold text-[#FCD34D] sm:text-4xl md:text-5xl lg:text-6xl">
-            איך זה עובד?
+    <section id="testimonials" className="py-20 lg:py-28">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-14 fade-up">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] mb-4">
+            מה אומרים <span className="gold-gradient-text">עלינו</span>
           </h2>
-          <p className="mx-auto max-w-lg text-lg text-[#9CA3AF]">
-            שלושה צעדים פשוטים ואתם בפנים
-          </p>
         </div>
 
-        <div className="relative flex flex-col gap-16 md:flex-row md:items-start md:justify-between md:gap-8">
-          {/* Connecting line (desktop) */}
-          <div className="absolute left-0 right-0 top-10 hidden overflow-hidden md:block">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {testimonials.map((t, i) => (
             <div
-              className={lineVisible ? "step-line-animated" : ""}
-              style={{
-                background: lineVisible
-                  ? "linear-gradient(to left, transparent, rgba(252,211,77,0.4), transparent)"
-                  : "transparent",
-                height: "2px",
-                width: lineVisible ? "100%" : "0%",
-                transition: "width 1.8s cubic-bezier(0.16, 1, 0.3, 1)",
-              }}
-            />
-          </div>
-
-          {steps.map((step, index) => (
-            <div
-              key={index}
-              className={`fade-section step-glow-bg relative flex flex-1 flex-col items-center text-center stagger-${
-                index + 1
-              }`}
+              key={i}
+              className={`testimonial-card fade-up stagger-${i + 1}`}
             >
-              <div className="step-number relative z-10 mb-8 flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#FCD34D] bg-[#050505] text-3xl font-black text-[#FCD34D]">
-                {step.number}
+              {/* Quote mark */}
+              <div className="text-4xl text-[#D4A017] opacity-30 mb-3 leading-none">
+                &ldquo;
               </div>
-              <h3 className="mb-4 text-xl font-bold text-white sm:text-2xl">
-                {step.title}
-              </h3>
-              <p className="max-w-xs text-base leading-relaxed text-[#9CA3AF] sm:text-lg">
-                {step.description}
+
+              <p className="text-[#4B5563] text-sm leading-relaxed mb-5">
+                {t.quote}
               </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
-/* ===================================================================
-   PRICING SECTION
-   =================================================================== */
+              {/* Stars */}
+              <div className="flex gap-1 mb-4">
+                {Array.from({ length: 5 }).map((_, si) => (
+                  <svg
+                    key={si}
+                    width="16"
+                    height="16"
+                    viewBox="0 0 20 20"
+                    fill="#D4A017"
+                  >
+                    <path d="M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.27l-4.77 2.44.91-5.32L2.27 6.62l5.34-.78z" />
+                  </svg>
+                ))}
+              </div>
 
-function PricingSection() {
-  const [countStarted, setCountStarted] = useState(false);
-  const [checksVisible, setChecksVisible] = useState(false);
-  const priceRef = useRef<HTMLDivElement>(null);
-  const displayPrice = useCountUp(50, 1500, countStarted);
-
-  useEffect(() => {
-    const node = priceRef.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setCountStarted(true);
-          setTimeout(() => setChecksVisible(true), 600);
-        }
-      },
-      { threshold: 0.3 }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <section id="pricing" className="relative px-4 py-24 sm:py-32">
-      <div className="section-divider mb-24" />
-
-      {/* Radial gold bg */}
-      <div className="pricing-radial-bg pointer-events-none absolute inset-0" />
-
-      <div className="mx-auto max-w-xl">
-        <div className="fade-section mb-20 text-center">
-          <h2 className="gold-text-glow mb-6 text-3xl font-bold text-[#FCD34D] sm:text-4xl md:text-5xl lg:text-6xl">
-            מחירון
-          </h2>
-          <p className="mx-auto max-w-lg text-lg text-[#9CA3AF]">
-            מחיר אחד פשוט. בלי הפתעות.
-          </p>
-        </div>
-
-        <div className="fade-section relative" ref={priceRef}>
-          {/* Recommended badge */}
-          <div className="absolute -top-4 left-1/2 z-20 -translate-x-1/2">
-            <div className="badge-glow rounded-full bg-gradient-to-l from-[#FCD34D] to-[#F59E0B] px-6 py-1.5 text-sm font-bold text-[#050505]">
-              מומלץ
-            </div>
-          </div>
-
-          <div className="glow-border-card p-8 text-center sm:p-12">
-            <div className="relative z-10">
-              <div className="price-tag-float mb-4 inline-block">
-                <div className="price-counter text-6xl font-black text-[#FCD34D] sm:text-8xl">
-                  {displayPrice}&#8362;
+              {/* Author */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white"
+                  style={{
+                    background: "linear-gradient(135deg, #D4A017, #F59E0B)",
+                  }}
+                >
+                  {t.initials}
+                </div>
+                <div>
+                  <div className="font-bold text-sm text-[#1A1A1A]">
+                    {t.name}
+                  </div>
+                  <div className="text-xs text-[#9CA3AF]">{t.title}</div>
                 </div>
               </div>
-              <div className="mb-2 text-2xl font-bold text-[#9CA3AF] sm:text-3xl">
-                לחודש
-              </div>
-              <p className="mb-10 text-lg text-[#9CA3AF]">
-                הכל כלול. בלי הפתעות.
-              </p>
-
-              <ul className="mb-10 space-y-4 text-right">
-                {pricingFeatures.map((feature, index) => (
-                  <li
-                    key={index}
-                    className="flex items-center gap-3"
-                    style={{
-                      opacity: checksVisible ? 1 : 0,
-                      transform: checksVisible
-                        ? "translateX(0)"
-                        : "translateX(10px)",
-                      transition: `opacity 0.5s ease ${
-                        index * 0.1
-                      }s, transform 0.5s ease ${index * 0.1}s`,
-                    }}
-                  >
-                    <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[rgba(252,211,77,0.12)] border border-[rgba(252,211,77,0.2)]">
-                      <svg
-                        className="h-3.5 w-3.5 text-[#FCD34D]"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    <span className="text-lg text-gray-200">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <a
-                href="#cta"
-                className="btn-gold inline-block px-10 py-4 text-lg font-bold sm:px-12 sm:py-5 sm:text-xl"
-              >
-                התחילו 14 יום חינם
-              </a>
-              <p className="mt-5 text-sm text-[#9CA3AF]">
-                ללא כרטיס אשראי. ללא התחייבות.
-              </p>
             </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-/* ===================================================================
-   FAQ SECTION
-   =================================================================== */
-
-function FAQSection() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
+function PricingSection() {
   return (
-    <section id="faq" className="relative px-4 py-24 sm:py-32">
-      <div className="section-divider mb-24" />
-      <div className="mx-auto max-w-2xl">
-        <div className="fade-section mb-20 text-center">
-          <h2 className="gold-text-glow mb-6 text-3xl font-bold text-[#FCD34D] sm:text-4xl md:text-5xl lg:text-6xl">
-            שאלות נפוצות
+    <section
+      id="pricing"
+      className="py-20 lg:py-28"
+      style={{ background: "#F3F4F6" }}
+    >
+      <div className="max-w-xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-14 fade-up">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] mb-4">
+            <span className="gold-gradient-text">מחירון</span>
           </h2>
         </div>
 
-        <div className="space-y-4">
-          {faqItems.map((item, index) => (
+        <div className="pricing-card p-8 sm:p-10 fade-up">
+          {/* Badge */}
+          <div className="text-center mb-8">
+            <span className="badge-gold">חודש ראשון חינם 🎁</span>
+          </div>
+
+          {/* Pricing options */}
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            {/* Monthly */}
+            <div className="text-center p-4 rounded-xl border border-[#E5E7EB]">
+              <div className="text-sm text-[#6B7280] mb-1">חודשי</div>
+              <div className="text-3xl font-extrabold text-[#1A1A1A]">
+                50<span className="text-lg">\u20AA</span>
+              </div>
+              <div className="text-xs text-[#9CA3AF]">לחודש</div>
+            </div>
+
+            {/* Annual */}
             <div
-              key={index}
-              className={`fade-section faq-item stagger-${index + 1} ${
-                openIndex === index ? "faq-item-open" : ""
+              className="text-center p-4 rounded-xl border-2"
+              style={{ borderColor: "#D4A017" }}
+            >
+              <div className="text-sm text-[#6B7280] mb-1">
+                שנתי{" "}
+                <span
+                  className="text-[10px] px-1.5 py-0.5 rounded-full text-white font-bold"
+                  style={{ background: "#D4A017" }}
+                >
+                  חוסכים 100\u20AA
+                </span>
+              </div>
+              <div className="text-3xl font-extrabold text-[#1A1A1A]">
+                500<span className="text-lg">\u20AA</span>
+              </div>
+              <div className="text-xs text-[#9CA3AF]">
+                לשנה, כולל 2 חודשים מתנה
+              </div>
+            </div>
+          </div>
+
+          {/* Feature list */}
+          <ul className="space-y-3 mb-8">
+            {pricingFeatures.map((f, i) => (
+              <li key={i} className="flex items-center gap-3 text-sm text-[#4B5563]">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 20 20"
+                  fill="#D4A017"
+                  className="shrink-0"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                {f}
+              </li>
+            ))}
+          </ul>
+
+          {/* CTA */}
+          <a
+            href="#"
+            className="btn-gold block text-center w-full py-3.5 text-base"
+          >
+            התחילו חודש חינם
+          </a>
+          <p className="text-center text-xs text-[#9CA3AF] mt-3">
+            ללא כרטיס אשראי. ביטול בכל עת.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FaqSection() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const toggle = useCallback(
+    (i: number) => setOpenIndex((prev) => (prev === i ? null : i)),
+    []
+  );
+
+  return (
+    <section id="faq" className="py-20 lg:py-28">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-14 fade-up">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] mb-4">
+            שאלות <span className="gold-gradient-text">נפוצות</span>
+          </h2>
+        </div>
+
+        <div className="space-y-3">
+          {faqItems.map((item, i) => (
+            <div
+              key={i}
+              className={`faq-item fade-up stagger-${Math.min(i + 1, 6)} ${
+                openIndex === i ? "faq-item-open" : ""
               }`}
             >
               <button
-                onClick={() =>
-                  setOpenIndex(openIndex === index ? null : index)
-                }
-                className="flex w-full items-center justify-between p-5 sm:p-6 text-right"
+                onClick={() => toggle(i)}
+                className="w-full flex items-center justify-between px-5 py-4 text-right"
               >
-                <span className="text-lg font-semibold text-white sm:text-xl">
+                <span className="font-bold text-[#1A1A1A] text-sm sm:text-base">
                   {item.question}
                 </span>
                 <svg
-                  className={`h-5 w-5 flex-shrink-0 text-[#FCD34D] transition-transform duration-500 ${
-                    openIndex === index ? "rotate-180" : ""
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="#D4A017"
+                  className={`shrink-0 transition-transform duration-300 ${
+                    openIndex === i ? "rotate-180" : ""
                   }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
                 >
                   <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
+                    fillRule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clipRule="evenodd"
                   />
                 </svg>
               </button>
               <div
+                className="overflow-hidden transition-all duration-400"
                 style={{
-                  display: "grid",
-                  gridTemplateRows: openIndex === index ? "1fr" : "0fr",
-                  opacity: openIndex === index ? 1 : 0,
-                  transition:
-                    "grid-template-rows 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease",
+                  maxHeight: openIndex === i ? "200px" : "0px",
+                  opacity: openIndex === i ? 1 : 0,
                 }}
               >
-                <div className="overflow-hidden">
-                  <p className="px-5 pb-5 sm:px-6 sm:pb-6 text-base leading-relaxed text-[#9CA3AF] sm:text-lg">
-                    {item.answer}
-                  </p>
+                <div className="px-5 pb-4 text-sm text-[#6B7280] leading-relaxed">
+                  {item.answer}
                 </div>
               </div>
             </div>
@@ -991,97 +777,32 @@ function FAQSection() {
   );
 }
 
-/* ===================================================================
-   FINAL CTA
-   =================================================================== */
-
-function FinalCTASection() {
+function FinalCTA() {
   return (
-    <section
-      id="cta"
-      className="relative overflow-hidden px-4 py-32 sm:py-40"
-    >
-      <div className="section-divider mb-24" />
-
-      {/* Full CTA gradient background */}
-      <div className="cta-gradient-bg pointer-events-none absolute inset-0" />
-
-      {/* Extra floating orbs for density */}
-      <div
-        className="float-1 pointer-events-none absolute left-1/4 top-1/3 h-[500px] w-[500px] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(252,211,77,0.12), transparent 65%)",
-        }}
-      />
-      <div
-        className="float-2 pointer-events-none absolute right-1/4 bottom-1/4 h-[400px] w-[400px] rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(252,211,77,0.1), transparent 65%)",
-        }}
-      />
-      <div
-        className="float-3 pointer-events-none absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{
-          background: "radial-gradient(circle, rgba(252,211,77,0.15), transparent 60%)",
-        }}
-      />
-
-      <div className="relative z-10 mx-auto max-w-3xl text-center">
-        <div className="fade-section">
-          <h2 className="gradient-text-animated mb-8 text-4xl font-black sm:text-5xl md:text-6xl lg:text-7xl">
-            מוכנים להתחיל?
-          </h2>
-          <p className="mx-auto mb-14 max-w-xl text-lg leading-relaxed text-[#9CA3AF] sm:text-xl md:text-2xl">
-            הצטרפו לבעלי העסקים שכבר חוסכים שעות של ניהול תורים
-          </p>
-          <a
-            href="#"
-            className="btn-gold cta-pulse inline-block px-14 py-6 text-xl font-bold sm:text-2xl"
-          >
-            התחילו תקופת ניסיון חינם
-          </a>
-          <p className="mt-6 text-base text-[#9CA3AF]">
-            14 יום ניסיון חינם. ללא כרטיס אשראי.
-          </p>
-        </div>
+    <section className="cta-gradient-bg py-20 lg:py-24">
+      <div className="max-w-2xl mx-auto px-4 text-center fade-up">
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] mb-4">
+          מוכנים לחסוך שעות של ניהול תורים?
+        </h2>
+        <p className="text-[#6B7280] text-lg mb-8">
+          הצטרפו לעסקים שכבר עובדים חכם
+        </p>
+        <a href="#pricing" className="btn-gold inline-block text-base py-3.5 px-10">
+          התחילו חודש ניסיון חינם
+        </a>
       </div>
     </section>
   );
 }
 
-/* ===================================================================
-   FOOTER
-   =================================================================== */
-
 function Footer() {
   return (
-    <footer className="border-t border-[rgba(255,255,255,0.05)] px-4 py-10">
-      <div className="mx-auto max-w-6xl">
-        <div className="flex flex-col items-center gap-6 text-center">
-          <span
-            className="text-xl font-bold gradient-text-animated"
-            style={{ WebkitTextFillColor: "transparent" }}
-          >
-            יסמין תור
-          </span>
-          <div className="flex gap-6 text-sm text-[#9CA3AF]">
-            <a
-              href="#"
-              className="transition-colors duration-300 hover:text-[#FCD34D]"
-            >
-              תנאי שימוש
-            </a>
-            <a
-              href="#"
-              className="transition-colors duration-300 hover:text-[#FCD34D]"
-            >
-              מדיניות פרטיות
-            </a>
-          </div>
-          <p className="text-sm text-[rgba(255,255,255,0.25)]">
-            &copy; 2026 יסמין תור | טל סיגרון - יסמין תקשורת
-          </p>
-        </div>
+    <footer className="py-10 border-t border-[#E5E7EB]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+        <div className="text-xl font-bold text-[#D4A017] mb-3">יסמין תור</div>
+        <p className="text-sm text-[#9CA3AF]">
+          &copy; 2026 יסמין תור | טל סיגרון - יסמין תקשורת
+        </p>
       </div>
     </footer>
   );
@@ -1091,21 +812,20 @@ function Footer() {
    MAIN PAGE
    =================================================================== */
 
-export default function Home() {
-  const pageRef = useFadeIn();
+export default function HomePage() {
+  const fadeRef = useFadeIn();
 
   return (
-    <div ref={pageRef} className="relative">
-      <CustomCursor />
-      <div className="noise-overlay" />
-      <ParticleBackground />
+    <div ref={fadeRef}>
       <Navbar />
       <HeroSection />
+      <StatsBar />
       <FeaturesSection />
-      <HowItWorksSection />
+      <HowItWorks />
+      <TestimonialsSection />
       <PricingSection />
-      <FAQSection />
-      <FinalCTASection />
+      <FaqSection />
+      <FinalCTA />
       <Footer />
     </div>
   );

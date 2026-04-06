@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl" className={heebo.className}>
-      <body className="min-h-screen bg-[#0a0a0a] text-white antialiased">
+      <body className="min-h-screen bg-[#FAFAF9] text-[#1A1A1A] antialiased">
         {children}
       </body>
     </html>
