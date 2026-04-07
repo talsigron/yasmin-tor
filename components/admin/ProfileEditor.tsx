@@ -246,7 +246,7 @@ export default function ProfileEditor() {
               >
                 {uploadingLogo ? 'מעלה לוגו...' : 'העלאת לוגו'}
               </Button>
-              <p className="text-[10px] text-gray-400 mt-1">העלי לוגו בקובץ PNG שקוף לתצוגה מושלמת. אם אין, תשאירי ריק 😊</p>
+              <p className="text-[10px] text-gray-400 mt-1">{labels.logoHint}</p>
             </div>
           </div>
         )}

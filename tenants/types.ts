@@ -27,6 +27,7 @@ export interface TenantLabels {
   servicePlaceholder: string;  // "מניקור ג'ל" / "אימון אישי"
   clientSeesBit: string;       // "הלקוחה תראה כפתור ביט..."
   clientSeesPaybox: string;    // "הלקוחה תראה כפתור פייבוקס..."
+  logoHint: string;            // "העלי לוגו..." / "העלה לוגו..."
 }
 
 export interface TenantFeatures {

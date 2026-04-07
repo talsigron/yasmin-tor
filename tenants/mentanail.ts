@@ -36,6 +36,7 @@ export const mentanailConfig: TenantConfig = {
     servicePlaceholder: "מניקור ג'ל",
     clientSeesBit: 'הלקוחה תראה כפתור ביט עם המספר שלך והסכום 💳',
     clientSeesPaybox: 'הלקוחה תראה כפתור פייבוקס עם המספר שלך והסכום 💳',
+    logoHint: 'העלי לוגו בקובץ PNG שקוף לתצוגה מושלמת. אם אין, תשאירי ריק 😊',
   },
   features: {
     autoApprove: false,
