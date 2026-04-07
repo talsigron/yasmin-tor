@@ -156,22 +156,29 @@ export default function TenantHomePage() {
         <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${brandSecondary}, ${brandSecondary}4D, transparent)` }} />
         <div className="relative max-w-3xl mx-auto px-5 pt-12 pb-10 md:pt-20 md:pb-16">
           <div className="text-center animate-fade-in">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              {profile.logo && (
-                <img src={profile.logo} alt={profile.name} className="w-14 h-14 md:w-16 md:h-16 rounded-2xl object-cover shadow-lg" />
-              )}
-              <h1 className="font-display text-5xl md:text-7xl tracking-wide" style={{ color: brandPrimary }}>
-                {profile.name}
-              </h1>
-            </div>
+            {profile.logo && (
+              <div className="flex justify-center mb-5">
+                <img
+                  src={profile.logo}
+                  alt={profile.name}
+                  className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover shadow-xl"
+                  style={{ border: `3px solid ${brandPrimary}30` }}
+                />
+              </div>
+            )}
+            <h1 className="font-display text-4xl md:text-6xl tracking-wide whitespace-nowrap mb-3" style={{ color: brandPrimary }}>
+              {profile.name}
+            </h1>
             {profile.subtitle && (
-              <p className="font-display text-2xl md:text-3xl mb-3" style={{ color: `${brandPrimary}99` }}>
+              <p className="font-display text-xl md:text-2xl mb-3" style={{ color: `${brandPrimary}99` }}>
                 {profile.subtitle}
               </p>
             )}
-            <p className="text-gray-500 text-base md:text-lg max-w-md mx-auto leading-relaxed mb-4">
-              {profile.description}
-            </p>
+            {profile.description && (
+              <p className="text-gray-500 text-base md:text-lg max-w-md mx-auto leading-relaxed mb-4">
+                {profile.description}
+              </p>
+            )}
           </div>
 
           {customer ? (
