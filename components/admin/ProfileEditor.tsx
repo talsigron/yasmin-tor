@@ -31,7 +31,7 @@ import Input from '@/components/ui/Input';
 
 export default function ProfileEditor() {
   const { supabase, config } = useTenant();
-  const { businessId } = config;
+  const { businessId, labels } = config;
   const { profile: profileData, loading: profileLoading, update: updateProfileHook } = useProfile();
   const { images: galleryImages, loading: galleryLoading, add: addGalleryImg, remove: removeGalleryImg, reorder: reorderGalleryImg } = useGallery();
   const [localProfile, setLocalProfile] = useState<BusinessProfile | null>(null);
@@ -296,13 +296,13 @@ export default function ProfileEditor() {
         <button onClick={() => toggleSection('booking')} className="w-full flex items-center justify-between py-2">
           <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
             <CalendarClock size={14} className="text-mint-500" />
-            הגדרות קביעת תורים
+            {labels.bookingSettings}
           </h3>
           <ChevronDown size={16} className={cn('text-gray-400 transition-transform', openSections['booking'] && 'rotate-180')} />
         </button>
         {openSections['booking'] && (
           <div className="space-y-4 pt-2">
-            <label className="block text-sm font-medium text-gray-700">כמה זמן קדימה ניתן לקבוע תור?</label>
+            <label className="block text-sm font-medium text-gray-700">{labels.advanceBookingLabel}</label>
             <div className="flex flex-wrap gap-2">
               {bookingOptions.map((opt) => (
                 <button
@@ -320,11 +320,11 @@ export default function ProfileEditor() {
               ))}
             </div>
             <p className="text-[10px] text-gray-500">
-              לקוחות יוכלו לקבוע תורים רק בטווח הזמן שנבחר
+              {labels.advanceBookingHint}
             </p>
 
             <div className="border-t border-gray-100 pt-4 mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">כמה תורים לקוחה יכולה לקבוע קדימה?</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{labels.maxBookingsLabel}</label>
               <div className="flex flex-wrap gap-2">
                 {[
                   { value: 1, label: '1' },
@@ -348,12 +348,12 @@ export default function ProfileEditor() {
                 ))}
               </div>
               <p className="text-[10px] text-gray-500 mt-1">
-                מונע מלקוחה לתפוס יותר מדי תורים בו-זמנית
+                {labels.maxBookingsHint}
               </p>
             </div>
 
             <div className="border-t border-gray-100 pt-4 mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">ביטול תור</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{labels.cancelBookingLabel}</label>
               <div className="flex gap-2">
                 <button
                   onClick={() => setProfile({ ...profile, cancelPolicy: 'website' })}
@@ -380,8 +380,8 @@ export default function ProfileEditor() {
               </div>
               <p className="text-[10px] text-gray-500 mt-1">
                 {profile.cancelPolicy === 'website'
-                  ? 'לקוחות יוכלו לבטל תורים ישירות מהאתר'
-                  : 'לקוחות יצטרכו ליצור קשר בוואטסאפ לביטול תור'}
+                  ? labels.cancelFromSite
+                  : labels.cancelViaWhatsapp}
               </p>
             </div>
           </div>
@@ -694,7 +694,7 @@ export default function ProfileEditor() {
                   )}
                   {(!profile.bitType || profile.bitType === 'regular') && (
                     <p className="text-[10px] text-gray-500">
-                      הלקוחה תראה כפתור ביט עם המספר שלך והסכום 💳
+                      {labels.clientSeesBit}
                     </p>
                   )}
                 </div>
@@ -718,7 +718,7 @@ export default function ProfileEditor() {
               </div>
               {profile.enablePaybox && (
                 <p className="text-[10px] text-gray-500">
-                  הלקוחה תראה כפתור פייבוקס עם המספר שלך והסכום 💳
+                  {labels.clientSeesPaybox}
                 </p>
               )}
             </div>

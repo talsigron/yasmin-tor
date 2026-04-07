@@ -37,6 +37,8 @@ export async function fetchServices(db: SupabaseClient, businessId: string): Pro
     image: row.image ?? undefined,
     order: row.sort_order ?? 0,
     active: row.active ?? true,
+    showPrice: row.show_price ?? undefined,
+    showDuration: row.show_duration ?? undefined,
   }));
 }
 
@@ -65,6 +67,8 @@ export async function createService(
       image: service.image ?? null,
       sort_order: nextOrder,
       active: service.active,
+      show_price: service.showPrice ?? null,
+      show_duration: service.showDuration ?? null,
     })
     .select()
     .single();
@@ -80,6 +84,8 @@ export async function createService(
     image: data.image ?? undefined,
     order: data.sort_order ?? 0,
     active: data.active ?? true,
+    showPrice: data.show_price ?? undefined,
+    showDuration: data.show_duration ?? undefined,
   };
 }
 
@@ -97,6 +103,8 @@ export async function updateServiceById(
   if (updates.image !== undefined) row.image = updates.image;
   if (updates.order !== undefined) row.sort_order = updates.order;
   if (updates.active !== undefined) row.active = updates.active;
+  if (updates.showPrice !== undefined) row.show_price = updates.showPrice;
+  if (updates.showDuration !== undefined) row.show_duration = updates.showDuration;
 
   const { error } = await db
     .from('services')

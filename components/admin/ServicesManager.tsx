@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useServices } from '@/hooks/useSupabase';
+import { useTenant } from '@/contexts/TenantContext';
 import { Service } from '@/lib/types';
 import { formatPrice, formatDuration, cn } from '@/lib/utils';
 import {
@@ -13,6 +14,7 @@ import {
   X,
   Check,
   Clock,
+  DollarSign,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -20,6 +22,8 @@ import Modal from '@/components/ui/Modal';
 
 export default function ServicesManager() {
   const { services, loading, add, update, remove, reorder } = useServices();
+  const { config } = useTenant();
+  const { labels, features } = config;
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
@@ -28,6 +32,8 @@ export default function ServicesManager() {
     price: number;
     duration: number;
     description: string;
+    showPrice?: boolean;
+    showDuration?: boolean;
   }) => {
     try {
       if (editingService) {
@@ -154,13 +160,17 @@ export default function ServicesManager() {
                 </div>
                 <p className="text-xs text-gray-500 mb-2">{service.description}</p>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-mint-600">
-                    {formatPrice(service.price)}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-gray-500">
-                    <Clock size={11} />
-                    {formatDuration(service.duration)}
-                  </span>
+                  {(service.showPrice ?? features.showPrice) && (
+                    <span className="text-sm font-bold text-mint-600">
+                      {formatPrice(service.price)}
+                    </span>
+                  )}
+                  {(service.showDuration ?? features.showDuration) && (
+                    <span className="flex items-center gap-1 text-xs text-gray-500">
+                      <Clock size={11} />
+                      {formatDuration(service.duration)}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-1 shrink-0">
@@ -201,10 +211,12 @@ export default function ServicesManager() {
           setIsAdding(false);
           setEditingService(null);
         }}
-        title={editingService ? 'עריכת שירות' : 'שירות חדש'}
+        title={editingService ? `עריכת ${labels.service}` : `${labels.service} חדש`}
       >
         <ServiceForm
           service={editingService}
+          features={features}
+          labels={labels}
           onSave={handleSave}
           onCancel={() => {
             setIsAdding(false);
@@ -218,15 +230,21 @@ export default function ServicesManager() {
 
 function ServiceForm({
   service,
+  features,
+  labels,
   onSave,
   onCancel,
 }: {
   service: Service | null;
+  features: { showPrice: boolean; showDuration: boolean };
+  labels: { servicePlaceholder: string };
   onSave: (data: {
     name: string;
     price: number;
     duration: number;
     description: string;
+    showPrice?: boolean;
+    showDuration?: boolean;
   }) => void;
   onCancel: () => void;
 }) {
@@ -234,15 +252,21 @@ function ServiceForm({
   const [price, setPrice] = useState(service?.price?.toString() || '');
   const [duration, setDuration] = useState(service?.duration?.toString() || '45');
   const [description, setDescription] = useState(service?.description || '');
-
+  const [showPrice, setShowPrice] = useState<boolean>(
+    service?.showPrice ?? features.showPrice
+  );
+  const [showDuration, setShowDuration] = useState<boolean>(
+    service?.showDuration ?? features.showDuration
+  );
   const [priceError, setPriceError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || price === '' || !duration) return;
-    const priceNum = parseInt(price);
-    if (priceNum < 0) {
-      setPriceError('מחיר לא יכול להיות שלילי 🙅‍♀️');
+    if (!name.trim() || !duration) return;
+    if (showPrice && price === '') return;
+    const priceNum = showPrice ? parseInt(price) : 0;
+    if (showPrice && priceNum < 0) {
+      setPriceError('מחיר לא יכול להיות שלילי');
       return;
     }
     setPriceError('');
@@ -251,37 +275,75 @@ function ServiceForm({
       price: priceNum,
       duration: parseInt(duration),
       description: description.trim(),
+      showPrice,
+      showDuration,
     });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
-        label="שם השירות"
+        label="שם"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="לדוגמה: מניקור ג'ל"
+        placeholder={`לדוגמה: ${labels.servicePlaceholder}`}
         autoFocus
       />
-      <div className="grid grid-cols-2 gap-3">
-        <Input
-          label="מחיר (₪)"
-          type="number"
-          value={price}
-          onChange={(e) => { setPrice(e.target.value); setPriceError(''); }}
-          placeholder="120"
-          dir="ltr"
-          error={priceError}
-        />
-        <Input
-          label="משך (דקות)"
-          type="number"
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          placeholder="60"
-          dir="ltr"
-        />
+
+      {/* Price & duration toggles */}
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={() => setShowPrice(!showPrice)}
+          className={cn(
+            'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium border-2 transition-all cursor-pointer',
+            showPrice
+              ? 'border-mint-400 bg-mint-50 text-mint-700'
+              : 'border-gray-200 text-gray-400'
+          )}
+        >
+          <DollarSign size={13} />
+          מחיר
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowDuration(!showDuration)}
+          className={cn(
+            'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium border-2 transition-all cursor-pointer',
+            showDuration
+              ? 'border-mint-400 bg-mint-50 text-mint-700'
+              : 'border-gray-200 text-gray-400'
+          )}
+        >
+          <Clock size={13} />
+          משך זמן
+        </button>
       </div>
+
+      <div className={cn('grid gap-3', showPrice && showDuration ? 'grid-cols-2' : 'grid-cols-1')}>
+        {showPrice && (
+          <Input
+            label="מחיר (₪)"
+            type="number"
+            value={price}
+            onChange={(e) => { setPrice(e.target.value); setPriceError(''); }}
+            placeholder="120"
+            dir="ltr"
+            error={priceError}
+          />
+        )}
+        {showDuration && (
+          <Input
+            label="משך (דקות)"
+            type="number"
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            placeholder="60"
+            dir="ltr"
+          />
+        )}
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
           תיאור
@@ -289,7 +351,7 @@ function ServiceForm({
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="תיאור קצר של השירות"
+          placeholder="תיאור קצר"
           rows={2}
           className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white focus:border-mint-400 focus:ring-4 focus:ring-mint-100 focus:outline-none transition-all duration-200 placeholder:text-gray-400 resize-none"
         />

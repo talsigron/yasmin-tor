@@ -7,6 +7,8 @@ export interface Service {
   image?: string;
   order: number;
   active: boolean;
+  showPrice?: boolean;    // null = inherit from features.showPrice
+  showDuration?: boolean; // null = inherit from features.showDuration
 }
 
 export interface TimeSlot {

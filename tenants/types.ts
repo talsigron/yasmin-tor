@@ -15,12 +15,26 @@ export interface TenantLabels {
   hello: string;           // "שלום"
   rescheduleMsg: (serviceName: string, dateStr: string, timeStr: string) => string;
   cancelMsg: (serviceName: string, dateStr: string, timeStr: string) => string;
+  // ProfileEditor strings
+  bookingSettings: string;     // "הגדרות קביעת תורים" / "הגדרות קביעת אימונים"
+  advanceBookingLabel: string; // "כמה זמן קדימה ניתן לקבוע תור?"
+  advanceBookingHint: string;  // "לקוחות יוכלו לקבוע תורים רק..."
+  maxBookingsLabel: string;    // "כמה תורים לקוחה יכולה לקבוע?"
+  maxBookingsHint: string;     // "מונע מלקוחה לתפוס..."
+  cancelBookingLabel: string;  // "ביטול תור" / "ביטול אימון"
+  cancelFromSite: string;      // "לקוחות יוכלו לבטל תורים ישירות מהאתר"
+  cancelViaWhatsapp: string;   // "לקוחות יצטרכו ליצור קשר בוואטסאפ לביטול תור"
+  servicePlaceholder: string;  // "מניקור ג'ל" / "אימון אישי"
+  clientSeesBit: string;       // "הלקוחה תראה כפתור ביט..."
+  clientSeesPaybox: string;    // "הלקוחה תראה כפתור פייבוקס..."
 }
 
 export interface TenantFeatures {
   autoApprove: boolean;        // האם הרשמה אוטומטית (ללא אישור)
   groupSessions: boolean;      // אימונים קבוצתיים עם מינ/מקס משתתפים
   customerCategories: boolean; // סיווג לקוחות (חדר כושר / אישי / קבוצתי)
+  showPrice: boolean;          // האם להציג מחיר ברירת מחדל
+  showDuration: boolean;       // האם להציג משך זמן ברירת מחדל
 }
 
 export interface TenantConfig {
