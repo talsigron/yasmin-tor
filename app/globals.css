@@ -5,6 +5,35 @@
   --color-gold-light: #F59E0B;
   --color-bg: #FAFAF9;
   --color-card: #FFFFFF;
+
+  /* Mint palette (used by booking app) */
+  --color-mint-50: #F0FDF4;
+  --color-mint-100: #DCFCE7;
+  --color-mint-200: #BBF7D0;
+  --color-mint-300: #86EFAC;
+  --color-mint-400: #4ADE80;
+  --color-mint-500: #22C55E;
+  --color-mint-600: #16A34A;
+
+  /* Booking app animations */
+  --animate-fade-in: fade-in 0.3s ease-out both;
+  --animate-scale-in: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-slide-up: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }
 
 /* ===== CSS Custom Properties ===== */
