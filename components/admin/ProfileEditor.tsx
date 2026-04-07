@@ -830,41 +830,13 @@ export default function ProfileEditor() {
 }
 
 function SaveConfetti({ brandColor }: { brandColor: string }) {
-  const pieces = [
-    { color: brandColor, x: -60, y: -80, r: 6, delay: 0 },
-    { color: '#F59E0B', x: 60, y: -90, r: 5, delay: 60 },
-    { color: '#EC4899', x: -90, y: -40, r: 7, delay: 30 },
-    { color: '#10B981', x: 90, y: -50, r: 5, delay: 90 },
-    { color: '#6366F1', x: -40, y: -110, r: 6, delay: 20 },
-    { color: '#F97316', x: 40, y: -100, r: 4, delay: 70 },
-    { color: brandColor, x: 110, y: -20, r: 5, delay: 50 },
-    { color: '#EC4899', x: -110, y: -30, r: 4, delay: 10 },
-    { color: '#10B981', x: 20, y: -120, r: 6, delay: 40 },
-    { color: '#F59E0B', x: -20, y: -115, r: 5, delay: 80 },
-  ];
-
   return (
     <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-      <div className="relative flex items-center justify-center">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center animate-scale-in"
-          style={{ backgroundColor: `${brandColor}20`, border: `2px solid ${brandColor}` }}>
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <path d="M7 16L13 22L25 10" stroke={brandColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
-              style={{ strokeDasharray: 30, strokeDashoffset: 0 }} />
-          </svg>
-        </div>
-        {pieces.map((p, i) => (
-          <div key={i} className="absolute rounded-full"
-            style={{
-              width: p.r * 2,
-              height: p.r * 2,
-              backgroundColor: p.color,
-              animation: `confetti-fly 1.6s ease-out ${p.delay}ms forwards`,
-              ['--tx' as string]: `${p.x}px`,
-              ['--ty' as string]: `${p.y}px`,
-            }}
-          />
-        ))}
+      <div className="w-20 h-20 rounded-full flex items-center justify-center animate-scale-in"
+        style={{ backgroundColor: `${brandColor}18`, border: `2.5px solid ${brandColor}` }}>
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <path d="M8 18L15 25L28 11" stroke={brandColor} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
     </div>
   );
