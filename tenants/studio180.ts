@@ -3,9 +3,9 @@ import { TenantConfig } from './types';
 export const studio180Config: TenantConfig = {
   id: 'studio180',
   slug: '180studio',
-  businessId: process.env.NEXT_PUBLIC_BUSINESS_ID_STUDIO180 ?? '',
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL_STUDIO180 ?? '',
-  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_STUDIO180 ?? '',
+  businessId: 'e27f7a45-251a-4b47-ba21-a395533aaca0',
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL_MENTANAIL ?? '',
+  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_MENTANAIL ?? '',
   labels: {
     booking: 'אימון',
     bookings: 'אימונים',
