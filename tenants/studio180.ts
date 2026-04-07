@@ -36,7 +36,7 @@ export const studio180Config: TenantConfig = {
     servicePlaceholder: 'אימון אישי',
     clientSeesBit: 'הלקוח יראה כפתור ביט עם המספר שלך והסכום 💳',
     clientSeesPaybox: 'הלקוח יראה כפתור פייבוקס עם המספר שלך והסכום 💳',
-    logoHint: 'העלה לוגו בקובץ PNG שקוף לתצוגה מושלמת. אם אין, תשאיר ריק 😊',
+    logoHint: 'העלה לוגו לתצוגה מושלמת. גם תמונה שלך יכולה לעבוד. אם אין, תשאיר ריק 😊',
   },
   features: {
     autoApprove: true,

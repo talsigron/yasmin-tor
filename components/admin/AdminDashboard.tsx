@@ -36,7 +36,17 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     { key: 'profile', label: 'עריכה', icon: Edit3 },
   ];
 
-  const [activeTab, setActiveTab] = useState<Tab>('appointments');
+  const tabStorageKey = `${config.id}_admin_tab`;
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    if (typeof window === 'undefined') return 'appointments';
+    const stored = localStorage.getItem(tabStorageKey);
+    return (stored as Tab) || 'appointments';
+  });
+
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    localStorage.setItem(tabStorageKey, tab);
+  };
   const [pendingCount, setPendingCount] = useState(0);
   const [notificationsOn, setNotificationsOn] = useState(false);
 
@@ -111,7 +121,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             const Icon = tab.icon;
             const isActive = activeTab === tab.key;
             return (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              <button key={tab.key} onClick={() => handleTabChange(tab.key)}
                 className="flex-1 flex flex-col items-center gap-1 py-3 transition-colors cursor-pointer relative"
                 style={{ color: isActive ? brandPrimary : '#9CA3AF' }}>
                 <div className="relative">

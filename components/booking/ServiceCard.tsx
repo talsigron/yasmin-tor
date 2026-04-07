@@ -3,7 +3,7 @@
 import { Service } from '@/lib/types';
 import { useTenant } from '@/contexts/TenantContext';
 import { formatPrice, formatDuration } from '@/lib/utils';
-import { Clock, Sparkles } from 'lucide-react';
+import { Clock, Sparkles, Dumbbell } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
 interface ServiceCardProps {
@@ -14,7 +14,7 @@ interface ServiceCardProps {
 }
 
 export default function ServiceCard({ service, onBook, delay = 0, brandColor }: ServiceCardProps) {
-  const { config: { features, labels } } = useTenant();
+  const { config: { features, labels, id: tenantId, defaultColors } } = useTenant();
   const shouldShowPrice = service.showPrice ?? features.showPrice;
   const shouldShowDuration = service.showDuration ?? features.showDuration;
 
@@ -28,7 +28,10 @@ export default function ServiceCard({ service, onBook, delay = 0, brandColor }: 
     >
       <div>
         <div className="flex items-center gap-1.5 mb-1.5">
-          <Sparkles size={14} className="text-mint-400 shrink-0" />
+          {tenantId === 'studio180'
+            ? <Dumbbell size={14} className="shrink-0" style={{ color: defaultColors.primary }} />
+            : <Sparkles size={14} className="text-mint-400 shrink-0" />
+          }
           <h3 className="font-bold text-gray-800 text-sm truncate">
             {service.name}
           </h3>

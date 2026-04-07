@@ -36,6 +36,7 @@ export default function ProfileEditor() {
   const { images: galleryImages, loading: galleryLoading, add: addGalleryImg, remove: removeGalleryImg, reorder: reorderGalleryImg } = useGallery();
   const [localProfile, setLocalProfile] = useState<BusinessProfile | null>(null);
   const [saved, setSaved] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -102,11 +103,14 @@ export default function ProfileEditor() {
     try {
       const { images, ...profileWithoutImages } = profile;
       await updateProfileHook(profileWithoutImages);
+      setOpenSections({});
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      setShowConfetti(true);
+      setTimeout(() => setSaved(false), 2500);
+      setTimeout(() => setShowConfetti(false), 1800);
     } catch (err) {
       console.error('Failed to save profile:', err);
-      alert('שגיאה בשמירה. נסי שוב.');
+      alert('שגיאה בשמירה. נסה שוב.');
     }
   };
 
@@ -169,6 +173,7 @@ export default function ProfileEditor() {
 
   return (
     <div className="animate-fade-in space-y-6">
+      {showConfetti && <SaveConfetti brandColor={config.defaultColors.primary} />}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-800">הגדרות העסק</h2>
         <Button
@@ -819,6 +824,47 @@ export default function ProfileEditor() {
         >
           {saved ? 'עודכן בהצלחה! 💫' : 'שמירה'}
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function SaveConfetti({ brandColor }: { brandColor: string }) {
+  const pieces = [
+    { color: brandColor, x: -60, y: -80, r: 6, delay: 0 },
+    { color: '#F59E0B', x: 60, y: -90, r: 5, delay: 60 },
+    { color: '#EC4899', x: -90, y: -40, r: 7, delay: 30 },
+    { color: '#10B981', x: 90, y: -50, r: 5, delay: 90 },
+    { color: '#6366F1', x: -40, y: -110, r: 6, delay: 20 },
+    { color: '#F97316', x: 40, y: -100, r: 4, delay: 70 },
+    { color: brandColor, x: 110, y: -20, r: 5, delay: 50 },
+    { color: '#EC4899', x: -110, y: -30, r: 4, delay: 10 },
+    { color: '#10B981', x: 20, y: -120, r: 6, delay: 40 },
+    { color: '#F59E0B', x: -20, y: -115, r: 5, delay: 80 },
+  ];
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+      <div className="relative flex items-center justify-center">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center animate-scale-in"
+          style={{ backgroundColor: `${brandColor}20`, border: `2px solid ${brandColor}` }}>
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <path d="M7 16L13 22L25 10" stroke={brandColor} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+              style={{ strokeDasharray: 30, strokeDashoffset: 0 }} />
+          </svg>
+        </div>
+        {pieces.map((p, i) => (
+          <div key={i} className="absolute rounded-full"
+            style={{
+              width: p.r * 2,
+              height: p.r * 2,
+              backgroundColor: p.color,
+              animation: `confetti-fly 1.6s ease-out ${p.delay}ms forwards`,
+              ['--tx' as string]: `${p.x}px`,
+              ['--ty' as string]: `${p.y}px`,
+            }}
+          />
+        ))}
       </div>
     </div>
   );
