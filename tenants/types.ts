@@ -28,6 +28,15 @@ export interface TenantLabels {
   clientSeesBit: string;       // "הלקוחה תראה כפתור ביט..."
   clientSeesPaybox: string;    // "הלקוחה תראה כפתור פייבוקס..."
   logoHint: string;            // "העלי לוגו..." / "העלה לוגו..."
+  // CustomersView strings
+  customerApproved: string;        // "מאושרת! 💅" / "מאושר! 🏋️"
+  customerPending: string;         // "ממתינה לאישור" / "ממתין לאישור"
+  pendingTab: string;              // "ממתינות לאישור" / "ממתינים לאישור"
+  noPendingCustomers: string;      // "אין לקוחות ממתינות! 🎉" / "אין לקוחות ממתינים! 🎉"
+  customersListEmpty: string;      // "עוד רגע מגיעות! 💅..." / "עוד רגע מגיעים! 🏋️..."
+  customerApprovedToast: string;   // "הלקוחה אושרה! 🎉" / "הלקוח אושר! 🎉"
+  sendWhatsappApproval: string;    // "שלחי הודעה בוואטסאפ" / "שלח הודעה בוואטסאפ"
+  customerApprovalMsg: (customerName: string, businessName: string, url: string) => string;
 }
 
 export interface TenantFeatures {

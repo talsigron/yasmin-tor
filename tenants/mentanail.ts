@@ -38,6 +38,15 @@ export const mentanailConfig: TenantConfig = {
     clientSeesBit: 'הלקוחה תראה כפתור ביט עם המספר שלך והסכום 💳',
     clientSeesPaybox: 'הלקוחה תראה כפתור פייבוקס עם המספר שלך והסכום 💳',
     logoHint: 'העלי לוגו לתצוגה מושלמת. גם תמונה שלך יכולה לעבוד. אם אין, תשאירי ריק 😊',
+    customerApproved: 'מאושרת! 💅',
+    customerPending: 'ממתינה לאישור',
+    pendingTab: 'ממתינות לאישור',
+    noPendingCustomers: 'אין לקוחות ממתינות! 🎉',
+    customersListEmpty: 'עוד רגע מגיעות! 💅 רשימת הלקוחות שלך ריקה',
+    customerApprovedToast: 'הלקוחה אושרה! 🎉',
+    sendWhatsappApproval: 'שלחי הודעה בוואטסאפ',
+    customerApprovalMsg: (name, businessName, url) =>
+      `היי ${name}! אושרת כלקוחה ב-${businessName} 💅 אפשר לקבוע תור: ${url}`,
   },
   features: {
     autoApprove: false,

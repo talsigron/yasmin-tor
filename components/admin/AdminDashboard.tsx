@@ -16,6 +16,7 @@ import ScheduleManager from './ScheduleManager';
 import ProfileEditor from './ProfileEditor';
 import CustomersView from './CustomersView';
 import Link from 'next/link';
+import TenantHead from '@/components/TenantHead';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -79,6 +80,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   }, [supabase, businessId]);
 
   return (
+    <>
+    <TenantHead />
     <div className="min-h-screen bg-gray-50 pb-24">
       <header className="bg-white border-b border-gray-100 px-5 py-4">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
@@ -142,5 +145,6 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         </div>
       </nav>
     </div>
+    </>
   );
 }

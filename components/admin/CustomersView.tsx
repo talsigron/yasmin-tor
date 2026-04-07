@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
+import { useTenant } from '@/contexts/TenantContext';
 
 type CustomerTab = 'all' | 'pending';
 
@@ -23,6 +24,8 @@ interface ApprovalToast {
 }
 
 export default function CustomersView() {
+  const { config } = useTenant();
+  const { labels, slug } = config;
   const { customers, loading: custLoading, approve, reject } = useCustomers();
   const { appointments, loading: apptLoading } = useAppointments();
   const { profile } = useProfile();
@@ -53,12 +56,14 @@ export default function CustomersView() {
   }, [approvalToast]);
 
   const businessName = profile?.name || 'העסק';
-  const appUrl = 'https://mentanail.vercel.app';
+  const appUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/${slug}`
+    : `https://talsigron.co.il/${slug}`;
 
   const buildWhatsAppApprovalLink = (customer: Customer) => {
     const phoneClean = customer.phone.replace(/^0/, '');
     const text = encodeURIComponent(
-      `היי ${customer.fullName}! אושרת כלקוחה ב-${businessName} 💅 אפשר לקבוע תור: ${appUrl}`
+      labels.customerApprovalMsg(customer.fullName, businessName, appUrl)
     );
     return `https://wa.me/972${phoneClean}?text=${text}`;
   };
@@ -96,9 +101,9 @@ export default function CustomersView() {
 
   const statusLabel = (status: Customer['status']) => {
     switch (status) {
-      case 'approved': return 'מאושרת! 💅';
-      case 'rejected': return 'לא אושרה';
-      case 'pending': return 'ממתינה לאישור';
+      case 'approved': return labels.customerApproved;
+      case 'rejected': return 'לא אושר/ה';
+      case 'pending': return labels.customerPending;
     }
   };
 
@@ -149,7 +154,7 @@ export default function CustomersView() {
               : 'text-gray-500 hover:text-gray-700'
           )}
         >
-          ממתינות לאישור
+          {labels.pendingTab}
           {pendingCount > 0 && (
             <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
               {pendingCount}
@@ -172,7 +177,7 @@ export default function CustomersView() {
         <div className="text-center py-12">
           <Users size={40} className="text-gray-200 mx-auto mb-3" />
           <p className="text-gray-500">
-            {search ? 'לא נמצאו לקוחות' : tab === 'pending' ? 'אין לקוחות ממתינות! 🎉' : 'עוד רגע מגיעות! 💅 רשימת הלקוחות שלך ריקה'}
+            {search ? 'לא נמצאו לקוחות' : tab === 'pending' ? labels.noPendingCustomers : labels.customersListEmpty}
           </p>
         </div>
       ) : (
@@ -269,7 +274,7 @@ export default function CustomersView() {
           <div className="bg-white rounded-2xl shadow-lg border border-mint-200 p-4 max-w-sm mx-auto">
             <div className="text-center mb-3">
               <p className="font-bold text-gray-800">
-                הלקוחה אושרה! 🎉
+                {labels.customerApprovedToast}
               </p>
               <p className="text-sm text-gray-500 mt-1">
                 {approvalToast.customer.fullName}
@@ -283,7 +288,7 @@ export default function CustomersView() {
               className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-medium hover:bg-[#1fb855] transition-colors"
             >
               <WhatsAppIcon size={16} />
-              שלחי הודעה בוואטסאפ
+              {labels.sendWhatsappApproval}
             </a>
           </div>
         </div>

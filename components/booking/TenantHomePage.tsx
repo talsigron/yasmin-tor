@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import InstagramIcon from '@/components/icons/InstagramIcon';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
+import TenantHead from '@/components/TenantHead';
 
 const CACHE_KEY_PREFIX = 'profile_cache_';
 
@@ -117,6 +118,8 @@ export default function TenantHomePage() {
   const brandBg = profile.brandColors?.background || defaultColors.background;
 
   return (
+    <>
+    <TenantHead />
     <main className="min-h-screen" style={{ '--brand-primary': brandPrimary, '--brand-secondary': brandSecondary, '--brand-bg': brandBg, backgroundColor: brandBg } as React.CSSProperties}>
       {/* Sticky Nav */}
       <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-100/50">
@@ -368,5 +371,6 @@ export default function TenantHomePage() {
         {selectedService && <BookingFlow service={selectedService} onClose={handleCloseBooking} />}
       </Modal>
     </main>
+    </>
   );
 }

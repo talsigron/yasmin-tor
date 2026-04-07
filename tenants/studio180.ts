@@ -38,6 +38,15 @@ export const studio180Config: TenantConfig = {
     clientSeesBit: 'הלקוח יראה כפתור ביט עם המספר שלך והסכום 💳',
     clientSeesPaybox: 'הלקוח יראה כפתור פייבוקס עם המספר שלך והסכום 💳',
     logoHint: 'העלה לוגו לתצוגה מושלמת. גם תמונה שלך יכולה לעבוד. אם אין, תשאיר ריק 😊',
+    customerApproved: 'מאושר! 🏋️',
+    customerPending: 'ממתין לאישור',
+    pendingTab: 'ממתינים לאישור',
+    noPendingCustomers: 'אין לקוחות ממתינים! 🎉',
+    customersListEmpty: 'עוד רגע מגיעים! 🏋️ רשימת הלקוחות שלך ריקה',
+    customerApprovedToast: 'הלקוח אושר! 🎉',
+    sendWhatsappApproval: 'שלח הודעה בוואטסאפ',
+    customerApprovalMsg: (name, businessName, url) =>
+      `היי ${name}! אושרת כלקוח ב-${businessName} 🏋️ אפשר לקבוע אימון: ${url}`,
   },
   features: {
     autoApprove: true,
