@@ -13,3 +13,11 @@ const tenants: Record<string, TenantConfig> = {
 export function getTenantConfig(slug: string): TenantConfig | null {
   return tenants[slug] ?? null;
 }
+
+export function getTenantByBusinessId(businessId: string): TenantConfig | null {
+  return Object.values(tenants).find((t) => t.businessId === businessId) ?? null;
+}
+
+export function getAllTenants(): TenantConfig[] {
+  return Object.values(tenants);
+}

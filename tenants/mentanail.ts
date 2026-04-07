@@ -3,6 +3,7 @@ import { TenantConfig } from './types';
 export const mentanailConfig: TenantConfig = {
   id: 'mentanail',
   slug: 'mentanail',
+  category: 'nails',
   businessId: 'f88f93c9-563b-42e1-9624-3a8817cab842',
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL_MENTANAIL ?? '',
   supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_MENTANAIL ?? '',

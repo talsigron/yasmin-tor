@@ -41,6 +41,7 @@ export interface TenantFeatures {
 export interface TenantConfig {
   id: string;              // 'mentanail' | 'studio180'
   slug: string;            // URL path segment: 'mentanail' | '180studio'
+  category: 'nails' | 'fitness' | 'other';
   businessId: string;      // Supabase business_profiles UUID
   supabaseUrl: string;
   supabaseAnonKey: string;
