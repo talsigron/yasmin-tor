@@ -30,17 +30,17 @@ export function logoutCustomer(tenantId: string): void {
 
 export function isAdminLoggedIn(tenantId: string): boolean {
   if (typeof window === 'undefined') return false;
-  return sessionStorage.getItem(`${tenantId}_admin_session`) === 'true';
+  return localStorage.getItem(`${tenantId}_admin_session`) === 'true';
 }
 
 export function adminLogin(tenantId: string, password: string, correctPassword: string): boolean {
   if (password === correctPassword) {
-    sessionStorage.setItem(`${tenantId}_admin_session`, 'true');
+    localStorage.setItem(`${tenantId}_admin_session`, 'true');
     return true;
   }
   return false;
 }
 
 export function adminLogout(tenantId: string): void {
-  sessionStorage.removeItem(`${tenantId}_admin_session`);
+  localStorage.removeItem(`${tenantId}_admin_session`);
 }
