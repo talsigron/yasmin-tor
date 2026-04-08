@@ -138,7 +138,10 @@ export default function Modal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center transition-[padding] duration-200"
+      style={{ paddingBottom: keyboardOffset }}
+    >
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
@@ -148,11 +151,10 @@ export default function Modal({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{ marginBottom: keyboardOffset }}
         className={cn(
           'relative w-full bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl animate-slide-up',
-          'overflow-y-auto transition-[max-height,margin] duration-300',
-          expanded ? 'max-h-[96dvh]' : 'max-h-[85dvh]',
+          'overflow-y-auto transition-[max-height] duration-300',
+          expanded ? 'max-h-[96vh]' : 'max-h-[85vh]',
           sizes[size]
         )}
       >
