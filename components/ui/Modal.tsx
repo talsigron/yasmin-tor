@@ -24,6 +24,12 @@ export default function Modal({
   const currentY = useRef(0);
   const isDragging = useRef(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+
+  // Reset expanded when modal closes
+  useEffect(() => {
+    if (!isOpen) setExpanded(false);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -31,9 +37,7 @@ export default function Modal({
     } else {
       document.body.style.overflow = '';
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
   // Lift modal above keyboard on iOS
@@ -41,12 +45,10 @@ export default function Modal({
     if (!isOpen || typeof window === 'undefined') return;
     const viewport = window.visualViewport;
     if (!viewport) return;
-
     const handleViewport = () => {
       const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
       setKeyboardOffset(offset);
     };
-
     viewport.addEventListener('resize', handleViewport);
     viewport.addEventListener('scroll', handleViewport);
     return () => {
@@ -56,36 +58,46 @@ export default function Modal({
     };
   }, [isOpen]);
 
-  // Escape key support
+  // Escape key
   useEffect(() => {
     if (!isOpen) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
-  // Swipe down to close
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const panel = panelRef.current;
     if (!panel) return;
+    // Allow drag from top (to expand) or when at scroll top (to close/collapse)
     if (panel.scrollTop <= 0) {
       startY.current = e.touches[0].clientY;
       isDragging.current = true;
     }
   }, []);
 
+  const expandedRef = useRef(false);
+  useEffect(() => { expandedRef.current = expanded; }, [expanded]);
+
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging.current) return;
     const panel = panelRef.current;
     if (!panel) return;
     currentY.current = e.touches[0].clientY - startY.current;
+
+    if (currentY.current < -40 && !expandedRef.current) {
+      // Swiping up — expand to full screen
+      setExpanded(true);
+      isDragging.current = false;
+      currentY.current = 0;
+      panel.style.transform = '';
+      return;
+    }
+
     if (currentY.current > 0) {
       panel.style.transform = `translateY(${currentY.current}px)`;
       panel.style.transition = 'none';
     } else {
-      isDragging.current = false;
       panel.style.transform = '';
       panel.style.transition = '';
     }
@@ -96,10 +108,19 @@ export default function Modal({
     isDragging.current = false;
     const panel = panelRef.current;
     if (!panel) return;
+
     if (currentY.current > 80) {
-      panel.style.transform = `translateY(100%)`;
-      panel.style.transition = 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
-      setTimeout(onClose, 400);
+      if (expandedRef.current) {
+        // Collapse back to partial
+        setExpanded(false);
+        panel.style.transform = '';
+        panel.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+      } else {
+        // Close
+        panel.style.transform = `translateY(100%)`;
+        panel.style.transition = 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
+        setTimeout(onClose, 400);
+      }
     } else {
       panel.style.transform = '';
       panel.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
@@ -130,11 +151,12 @@ export default function Modal({
         style={{ marginBottom: keyboardOffset }}
         className={cn(
           'relative w-full bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl animate-slide-up',
-          'max-h-[85dvh] overflow-y-auto transition-[margin] duration-200',
+          'overflow-y-auto transition-[max-height,margin] duration-300',
+          expanded ? 'max-h-[96dvh]' : 'max-h-[85dvh]',
           sizes[size]
         )}
       >
-        {/* Swipe handle indicator */}
+        {/* Swipe handle */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
           <div className="w-10 h-1 rounded-full bg-gray-300" />
         </div>
