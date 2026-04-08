@@ -14,6 +14,10 @@ import {
   ChevronDown,
   AlertCircle,
   FileText,
+  Activity,
+  UserCheck,
+  UserX,
+  Clock,
 } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
@@ -56,6 +60,53 @@ export default function CustomersView() {
   const loading = custLoading || apptLoading;
 
   const pendingCount = customers.filter((c) => c.status === 'pending').length;
+  const approvedCustomers = customers.filter((c) => c.status === 'approved');
+
+  // Stats computation
+  const now = new Date();
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  const getLastApptDate = (customerId: string): Date | null => {
+    const appts = appointments
+      .filter((a) => a.customerId === customerId && a.status !== 'cancelled')
+      .sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`));
+    return appts.length > 0 ? new Date(appts[0].date + 'T' + appts[0].time) : null;
+  };
+
+  const getApptCount = (customerId: string) =>
+    appointments.filter((a) => a.customerId === customerId && a.status !== 'cancelled').length;
+
+  const missingFieldsCount = isFitness
+    ? approvedCustomers.filter((c) => !c.idNumber || !c.dateOfBirth || !c.gender || !c.paymentMethod || !c.healthDeclarationUrl).length
+    : 0;
+
+  const inactiveBreakdown = {
+    week: 0,
+    twoWeeks: 0,
+    threeWeeks: 0,
+    month: 0,
+  };
+  approvedCustomers.forEach((c) => {
+    const last = getLastApptDate(c.id);
+    if (!last) { inactiveBreakdown.month++; return; }
+    const diff = now.getTime() - last.getTime();
+    if (diff > 30 * dayMs) inactiveBreakdown.month++;
+    else if (diff > 21 * dayMs) inactiveBreakdown.threeWeeks++;
+    else if (diff > 14 * dayMs) inactiveBreakdown.twoWeeks++;
+    else if (diff > 7 * dayMs) inactiveBreakdown.week++;
+  });
+
+  const activeThisMonth = approvedCustomers.filter((c) => {
+    const last = getLastApptDate(c.id);
+    return last && (now.getTime() - last.getTime()) < 30 * dayMs;
+  }).length;
+
+  const newThisMonth = customers.filter((c) => {
+    const d = new Date(c.createdAt);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+
+  const [showStats, setShowStats] = useState(false);
 
   const displayCustomers = tab === 'pending'
     ? customers.filter((c) => c.status === 'pending')
@@ -177,6 +228,123 @@ export default function CustomersView() {
             autoApprove ? 'right-0.5' : 'right-[22px]'
           )} />
         </button>
+      </div>
+
+      {/* Stats summary */}
+      <div className="mb-4">
+        <button
+          onClick={() => setShowStats(!showStats)}
+          className="w-full flex items-center justify-between bg-white border border-gray-100 rounded-xl px-3 py-2.5 cursor-pointer"
+        >
+          <span className="text-xs font-medium text-gray-600 flex items-center gap-1.5">
+            <Activity size={13} className="text-mint-500" />
+            סטטיסטיקות
+          </span>
+          <ChevronDown size={14} className={cn('text-gray-400 transition-transform', showStats && 'rotate-180')} />
+        </button>
+        {showStats && (
+          <div className="mt-2 space-y-2 animate-fade-in">
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-mint-50 rounded-xl p-3 text-center">
+                <p className="text-xl font-bold text-mint-700">{approvedCustomers.length}</p>
+                <p className="text-[10px] text-mint-600 flex items-center justify-center gap-1 mt-0.5">
+                  <UserCheck size={10} /> לקוחות רשומים
+                </p>
+              </div>
+              <div className="bg-blue-50 rounded-xl p-3 text-center">
+                <p className="text-xl font-bold text-blue-700">{activeThisMonth}</p>
+                <p className="text-[10px] text-blue-600 flex items-center justify-center gap-1 mt-0.5">
+                  <Activity size={10} /> פעילים החודש
+                </p>
+              </div>
+              <div className="bg-purple-50 rounded-xl p-3 text-center">
+                <p className="text-xl font-bold text-purple-700">{newThisMonth}</p>
+                <p className="text-[10px] text-purple-600 flex items-center justify-center gap-1 mt-0.5">
+                  <Users size={10} /> חדשים החודש
+                </p>
+              </div>
+              {isFitness && (
+                <div className="bg-amber-50 rounded-xl p-3 text-center">
+                  <p className="text-xl font-bold text-amber-700">{missingFieldsCount}</p>
+                  <p className="text-[10px] text-amber-600 flex items-center justify-center gap-1 mt-0.5">
+                    <AlertCircle size={10} /> פרטים חסרים
+                  </p>
+                </div>
+              )}
+              {!isFitness && (
+                <div className="bg-gray-50 rounded-xl p-3 text-center">
+                  <p className="text-xl font-bold text-gray-700">{pendingCount}</p>
+                  <p className="text-[10px] text-gray-600 flex items-center justify-center gap-1 mt-0.5">
+                    <Clock size={10} /> ממתינים לאישור
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Inactive breakdown */}
+            {(inactiveBreakdown.week + inactiveBreakdown.twoWeeks + inactiveBreakdown.threeWeeks + inactiveBreakdown.month) > 0 && (
+              <div className="bg-white border border-gray-100 rounded-xl p-3">
+                <p className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1.5">
+                  <UserX size={12} className="text-red-400" />
+                  לקוחות לא פעילים
+                </p>
+                <div className="space-y-1.5">
+                  {inactiveBreakdown.week > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">שבוע+</span>
+                      <span className="font-medium text-amber-600">{inactiveBreakdown.week}</span>
+                    </div>
+                  )}
+                  {inactiveBreakdown.twoWeeks > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">שבועיים+</span>
+                      <span className="font-medium text-orange-600">{inactiveBreakdown.twoWeeks}</span>
+                    </div>
+                  )}
+                  {inactiveBreakdown.threeWeeks > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">3 שבועות+</span>
+                      <span className="font-medium text-red-500">{inactiveBreakdown.threeWeeks}</span>
+                    </div>
+                  )}
+                  {inactiveBreakdown.month > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">חודש+</span>
+                      <span className="font-medium text-red-700">{inactiveBreakdown.month}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Top customers by appointments */}
+            {approvedCustomers.length > 0 && (
+              <div className="bg-white border border-gray-100 rounded-xl p-3">
+                <p className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1.5">
+                  <Calendar size={12} className="text-mint-500" />
+                  לקוחות מובילים (לפי {labels.bookings})
+                </p>
+                <div className="space-y-1.5">
+                  {approvedCustomers
+                    .map((c) => ({ ...c, apptCount: getApptCount(c.id) }))
+                    .filter((c) => c.apptCount > 0)
+                    .sort((a, b) => b.apptCount - a.apptCount)
+                    .slice(0, 5)
+                    .map((c, i) => (
+                      <div key={c.id} className="flex justify-between text-xs items-center">
+                        <span className="text-gray-700 flex items-center gap-1.5">
+                          <span className="w-4 h-4 rounded-full bg-mint-100 text-mint-700 text-[9px] font-bold flex items-center justify-center">{i + 1}</span>
+                          {c.fullName}
+                        </span>
+                        <span className="font-medium text-gray-600">{c.apptCount} {labels.bookings}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
