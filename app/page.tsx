@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Image from "next/image";
 
 /* ─────────────────────────────────────────────
    TERMS CONTENT
@@ -129,11 +128,10 @@ function PhoneFrame({ src, alt }: { src: string; alt: string }) {
           background: "#f5fffe",
         }}
       >
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={src}
           alt={alt}
-          width={390}
-          height={844}
           style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
         />
       </div>
@@ -296,11 +294,10 @@ export default function LandingPage() {
               className="hidden sm:block rounded-2xl overflow-hidden shadow-2xl border border-gray-200"
               style={{ width: 520, height: 340 }}
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/screenshots/booking-desktop.png"
                 alt="דף הזמנה דסקטופ"
-                width={1280}
-                height={800}
                 style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
               />
             </div>
@@ -332,11 +329,10 @@ export default function LandingPage() {
               className="hidden sm:block rounded-2xl overflow-hidden shadow-2xl border border-gray-200"
               style={{ width: 520, height: 340 }}
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/screenshots/admin-desktop.png"
                 alt="לוח ניהול דסקטופ"
-                width={1280}
-                height={800}
                 style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
               />
             </div>
