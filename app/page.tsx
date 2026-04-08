@@ -108,6 +108,159 @@ function TermsModal({ onClose }: { onClose: () => void }) {
 }
 
 /* ─────────────────────────────────────────────
+   ACCESSIBILITY MODAL
+───────────────────────────────────────────── */
+const ACCESSIBILITY_TEXT = `
+הצהרת נגישות — יסמין תור
+עודכן: אפריל 2026
+
+יסמין תקשורת שואפת לאפשר שימוש נוח ונגיש לכלל המשתמשים, לרבות אנשים עם מוגבלויות.
+
+רמת הנגישות
+האתר מיועד לעמוד בדרישות תקן ישראלי 5568 (WCAG 2.1 ברמה AA).
+
+מה עשינו:
+• ניגודיות צבעים מספקת לקריאה נוחה
+• טקסטים ברורים וקריאים
+• תמיכה בהגדלת טקסט בדפדפן
+• סדר לוגי של כותרות ותוכן
+• תמיכה בניווט בעזרת מקלדת
+
+מגבלות ידועות
+חלק מהתכנים עשויים שלא לעמוד במלוא דרישות הנגישות. אנו פועלים לשיפור מתמיד.
+
+יצירת קשר
+נתקלתם בבעיית נגישות? נשמח לשמוע:
+• טלפון/WhatsApp: 050-455-8444
+• אימייל: talsigronuzan@gmail.com
+
+נדון בפנייה ונשתדל להשיב בתוך 5 ימי עסקים.
+`.trim();
+
+function AccessibilityModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      style={{ background: "rgba(28,26,16,0.7)" }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl max-h-[85vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
+          <button
+            onClick={onClose}
+            className="text-stone-400 hover:text-stone-600 text-2xl leading-none w-8 h-8 flex items-center justify-center"
+          >
+            ×
+          </button>
+          <h2 className="text-base font-bold text-stone-900">הצהרת נגישות</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          <pre className="text-sm text-stone-600 whitespace-pre-wrap font-sans leading-relaxed" dir="rtl">
+            {ACCESSIBILITY_TEXT}
+          </pre>
+        </div>
+        <div className="px-6 py-4 border-t border-stone-100">
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-xl font-bold text-base transition-opacity hover:opacity-90"
+            style={{ background: "#1C1A10", color: "#F0C040" }}
+          >
+            סגור
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   PRIVACY MODAL
+───────────────────────────────────────────── */
+const PRIVACY_TEXT = `
+מדיניות פרטיות — יסמין תור
+עודכן: אפריל 2026
+
+1. מי אנחנו
+יסמין תור מופעלת על ידי יסמין תקשורת, בבעלות טל סיגרון.
+כתובת לפניות: talsigronuzan@gmail.com | 050-455-8444
+
+2. אילו נתונים אנו אוספים
+
+א. נתוני בעלי עסקים (הנרשמים לפלטפורמה):
+• שם העסק, שם הבעלים, מספר טלפון
+• קטגוריית העסק
+
+ב. נתוני לקוחות-קצה (הקובעים תורים דרך העסק):
+• שם ומספר טלפון
+• היסטוריית תורים עם אותו העסק
+
+3. כיצד נעשה שימוש במידע
+• תפעול השירות: שמירת תורים, שליחת תזכורות
+• תקשורת שירות עם בעל העסק
+• שיפור המערכת (נתונים מצטברים, ללא זיהוי אישי)
+
+איננו משתמשים במידע לצרכי שיווק ואיננו מוכרים אותו לצדדים שלישיים.
+
+4. אחסון ואבטחה
+הנתונים מאוחסנים בשרתי Supabase (AWS) באזור אירופה. אנו נוקטים אמצעי אבטחה סבירים להגנה על המידע.
+
+5. זכויות המשתמש
+בהתאם לחוק הגנת הפרטיות, תשמ"א-1981:
+• זכות לעיין במידע השמור עליך
+• זכות לתקן מידע שגוי
+• זכות לבקש מחיקת מידע (בכפוף למגבלות חוק)
+לפניות: talsigronuzan@gmail.com
+
+6. עוגיות (Cookies)
+האתר משתמש בעוגיות טכניות בלבד, הנדרשות לתפקוד הבסיסי של הממשק. אין שימוש בעוגיות פרסומיות או מעקב.
+
+7. שינויים במדיניות
+שינויים מהותיים יפורסמו בדף זה. המשך השימוש לאחר הפרסום מהווה הסכמה.
+`.trim();
+
+function PrivacyModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      style={{ background: "rgba(28,26,16,0.7)" }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl max-h-[85vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
+          <button
+            onClick={onClose}
+            className="text-stone-400 hover:text-stone-600 text-2xl leading-none w-8 h-8 flex items-center justify-center"
+          >
+            ×
+          </button>
+          <h2 className="text-base font-bold text-stone-900">מדיניות פרטיות</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          <pre className="text-sm text-stone-600 whitespace-pre-wrap font-sans leading-relaxed" dir="rtl">
+            {PRIVACY_TEXT}
+          </pre>
+        </div>
+        <div className="px-6 py-4 border-t border-stone-100">
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-xl font-bold text-base transition-opacity hover:opacity-90"
+            style={{ background: "#1C1A10", color: "#F0C040" }}
+          >
+            סגור
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    PHONE FRAME
 ───────────────────────────────────────────── */
 function PhoneFrame({ src, alt }: { src: string; alt: string }) {
@@ -145,6 +298,8 @@ function PhoneFrame({ src, alt }: { src: string; alt: string }) {
 ───────────────────────────────────────────── */
 export default function LandingPage() {
   const [showTerms, setShowTerms] = useState(false);
+  const [showAccessibility, setShowAccessibility] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [form, setForm] = useState({
     businessName: "",
     ownerName: "",
@@ -201,6 +356,8 @@ export default function LandingPage() {
   return (
     <div dir="rtl" className="min-h-screen" style={{ background: "#FFFBEF" }}>
       {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
+      {showAccessibility && <AccessibilityModal onClose={() => setShowAccessibility(false)} />}
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
 
       {/* ── NAVBAR ── */}
       <header
@@ -724,6 +881,23 @@ export default function LandingPage() {
           </a>
           <span>·</span>
           <span>talsigronuzan@gmail.com</span>
+        </div>
+        <div className="mt-3 flex items-center justify-center gap-4 text-xs" style={{ color: "#5A4E30" }}>
+          <button
+            onClick={() => setShowAccessibility(true)}
+            className="hover:underline transition-colors"
+            style={{ color: "#7A6940" }}
+          >
+            הצהרת נגישות
+          </button>
+          <span>·</span>
+          <button
+            onClick={() => setShowPrivacy(true)}
+            className="hover:underline transition-colors"
+            style={{ color: "#7A6940" }}
+          >
+            מדיניות פרטיות
+          </button>
         </div>
       </footer>
     </div>
