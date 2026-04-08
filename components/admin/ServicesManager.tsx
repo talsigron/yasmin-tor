@@ -212,16 +212,27 @@ export default function ServicesManager() {
           setEditingService(null);
         }}
         title={editingService ? `עריכת ${labels.service}` : `${labels.service} חדש`}
+        footer={
+          <div className="flex gap-3 px-6 pb-6 pt-3 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => { setIsAdding(false); setEditingService(null); }}
+            >
+              ביטול
+            </Button>
+            <Button type="submit" form="service-form" variant="primary" className="flex-1">
+              {editingService ? 'עדכון' : 'הוספה'}
+            </Button>
+          </div>
+        }
       >
         <ServiceForm
           service={editingService}
           features={features}
           labels={labels}
           onSave={handleSave}
-          onCancel={() => {
-            setIsAdding(false);
-            setEditingService(null);
-          }}
         />
       </Modal>
     </div>
@@ -233,7 +244,6 @@ function ServiceForm({
   features,
   labels,
   onSave,
-  onCancel,
 }: {
   service: Service | null;
   features: { showPrice: boolean; showDuration: boolean };
@@ -246,7 +256,6 @@ function ServiceForm({
     showPrice?: boolean;
     showDuration?: boolean;
   }) => void;
-  onCancel: () => void;
 }) {
   const [name, setName] = useState(service?.name || '');
   const [price, setPrice] = useState(service?.price?.toString() || '');
@@ -281,7 +290,7 @@ function ServiceForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form id="service-form" onSubmit={handleSubmit} className="space-y-4">
       <Input
         label="שם"
         value={name}
@@ -355,14 +364,6 @@ function ServiceForm({
           rows={2}
           className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white focus:border-mint-400 focus:ring-4 focus:ring-mint-100 focus:outline-none transition-all duration-200 placeholder:text-gray-400 resize-none"
         />
-      </div>
-      <div className="sticky bottom-0 bg-white pt-3 pb-1 flex gap-3 border-t border-gray-100 mt-2">
-        <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
-          ביטול
-        </Button>
-        <Button type="submit" variant="primary" className="flex-1">
-          {service ? 'עדכון' : 'הוספה'}
-        </Button>
       </div>
     </form>
   );

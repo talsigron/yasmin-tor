@@ -9,6 +9,7 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'full';
 }
 
@@ -17,6 +18,7 @@ export default function Modal({
   onClose,
   title,
   children,
+  footer,
   size = 'md',
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -153,17 +155,17 @@ export default function Modal({
         onTouchEnd={handleTouchEnd}
         className={cn(
           'relative w-full bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl animate-slide-up',
-          'overflow-y-auto transition-[max-height] duration-300',
+          'flex flex-col transition-[max-height] duration-300',
           expanded ? 'max-h-[96vh]' : 'max-h-[85vh]',
           sizes[size]
         )}
       >
         {/* Swipe handle */}
-        <div className="flex justify-center pt-3 pb-1 sm:hidden">
+        <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
           <div className="w-10 h-1 rounded-full bg-gray-300" />
         </div>
         {title && (
-          <div className="sticky top-0 bg-white/95 backdrop-blur-sm px-6 py-4 border-b border-gray-100 rounded-t-3xl flex items-center justify-between z-10">
+          <div className="bg-white/95 backdrop-blur-sm px-6 py-4 border-b border-gray-100 rounded-t-3xl flex items-center justify-between shrink-0">
             <h2 className="text-lg font-bold text-gray-800">{title}</h2>
             <button
               onClick={onClose}
@@ -173,7 +175,8 @@ export default function Modal({
             </button>
           </div>
         )}
-        <div className="px-6 pt-6 pb-4">{children}</div>
+        <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4">{children}</div>
+        {footer && <div className="shrink-0">{footer}</div>}
       </div>
     </div>
   );
