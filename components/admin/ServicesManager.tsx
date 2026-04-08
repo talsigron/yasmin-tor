@@ -356,7 +356,7 @@ function ServiceForm({
           className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white focus:border-mint-400 focus:ring-4 focus:ring-mint-100 focus:outline-none transition-all duration-200 placeholder:text-gray-400 resize-none"
         />
       </div>
-      <div className="flex gap-3 pt-2">
+      <div className="sticky bottom-0 bg-white pt-3 pb-1 flex gap-3 border-t border-gray-100 mt-2">
         <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
           ביטול
         </Button>
