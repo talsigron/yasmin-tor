@@ -155,7 +155,7 @@ export default function Modal({
         onTouchEnd={handleTouchEnd}
         className={cn(
           'relative w-full bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl animate-slide-up',
-          'flex flex-col transition-[max-height] duration-300',
+          'flex flex-col transition-[max-height] duration-300 pb-24 sm:pb-0',
           expanded ? 'max-h-[96vh]' : 'max-h-[85vh]',
           sizes[size]
         )}
