@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +23,7 @@ export default function Modal({
   const startY = useRef(0);
   const currentY = useRef(0);
   const isDragging = useRef(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
@@ -32,6 +33,26 @@ export default function Modal({
     }
     return () => {
       document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  // Lift modal above keyboard on iOS
+  useEffect(() => {
+    if (!isOpen || typeof window === 'undefined') return;
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const handleViewport = () => {
+      const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      setKeyboardOffset(offset);
+    };
+
+    viewport.addEventListener('resize', handleViewport);
+    viewport.addEventListener('scroll', handleViewport);
+    return () => {
+      viewport.removeEventListener('resize', handleViewport);
+      viewport.removeEventListener('scroll', handleViewport);
+      setKeyboardOffset(0);
     };
   }, [isOpen]);
 
@@ -49,7 +70,6 @@ export default function Modal({
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const panel = panelRef.current;
     if (!panel) return;
-    // Only start drag if at top of scroll
     if (panel.scrollTop <= 0) {
       startY.current = e.touches[0].clientY;
       isDragging.current = true;
@@ -62,11 +82,9 @@ export default function Modal({
     if (!panel) return;
     currentY.current = e.touches[0].clientY - startY.current;
     if (currentY.current > 0) {
-      // Prevent default scroll when dragging down
       panel.style.transform = `translateY(${currentY.current}px)`;
       panel.style.transition = 'none';
     } else {
-      // User is scrolling up - let normal scroll work
       isDragging.current = false;
       panel.style.transform = '';
       panel.style.transition = '';
@@ -79,12 +97,10 @@ export default function Modal({
     const panel = panelRef.current;
     if (!panel) return;
     if (currentY.current > 80) {
-      // Swipe was far enough - close with smooth slide
       panel.style.transform = `translateY(100%)`;
       panel.style.transition = 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
       setTimeout(onClose, 400);
     } else {
-      // Snap back smoothly
       panel.style.transform = '';
       panel.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
     }
@@ -111,9 +127,10 @@ export default function Modal({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        style={{ marginBottom: keyboardOffset }}
         className={cn(
           'relative w-full bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl animate-slide-up',
-          'max-h-[85dvh] overflow-y-auto',
+          'max-h-[85dvh] overflow-y-auto transition-[margin] duration-200',
           sizes[size]
         )}
       >
