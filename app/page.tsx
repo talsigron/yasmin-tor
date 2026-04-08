@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 
+const IMG_BASE = "https://yasmin-tor.vercel.app";
+
 /* ─────────────────────────────────────────────
    TERMS CONTENT
 ───────────────────────────────────────────── */
@@ -291,7 +293,7 @@ export default function LandingPage() {
 
             {/* Phone side */}
             <div className="shrink-0">
-              <PhoneFrame src="/screenshots/booking-mobile.png" alt="דף הזמנה מובייל" />
+              <PhoneFrame src={`${IMG_BASE}/screenshots/booking-mobile.png`} alt="דף הזמנה מובייל" />
             </div>
           </div>
         </div>
@@ -327,14 +329,14 @@ export default function LandingPage() {
               style={{ border: "1px solid rgba(184,134,11,0.15)", maxWidth: 520 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/screenshots/booking-desktop.png"
+                src={`${IMG_BASE}/screenshots/booking-desktop.png`}
                 alt="דף הזמנה"
                 style={{ width: "100%", display: "block", objectFit: "cover", objectPosition: "top", height: 340 }}
               />
             </div>
             {/* Mobile screenshot */}
             <div className="sm:hidden">
-              <PhoneFrame src="/screenshots/booking-mobile.png" alt="דף הזמנה מובייל" />
+              <PhoneFrame src={`${IMG_BASE}/screenshots/booking-mobile.png`} alt="דף הזמנה מובייל" />
             </div>
             <div className="flex-1 text-right sm:max-w-xs">
               <p
@@ -363,14 +365,14 @@ export default function LandingPage() {
               style={{ border: "1px solid rgba(184,134,11,0.15)", maxWidth: 520 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/screenshots/admin-desktop.png"
+                src={`${IMG_BASE}/screenshots/admin-desktop.png`}
                 alt="לוח ניהול"
                 style={{ width: "100%", display: "block", objectFit: "cover", objectPosition: "top", height: 340 }}
               />
             </div>
             {/* Mobile screenshot */}
             <div className="sm:hidden">
-              <PhoneFrame src="/screenshots/admin-services-mobile.png" alt="ניהול שירותים מובייל" />
+              <PhoneFrame src={`${IMG_BASE}/screenshots/admin-services-mobile.png`} alt="ניהול שירותים מובייל" />
             </div>
             <div className="flex-1 text-right sm:max-w-xs">
               <p
