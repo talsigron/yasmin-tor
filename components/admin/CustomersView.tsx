@@ -342,7 +342,7 @@ export default function CustomersView() {
                     <div className="flex justify-between">
                       <span className="text-gray-500">גיל</span>
                       {customer.dateOfBirth
-                        ? <span className="font-medium text-gray-800">{calcAge(customer.dateOfBirth)} ({formatDob(customer.dateOfBirth)})</span>
+                        ? <span className="font-medium text-gray-800">{calcAge(customer.dateOfBirth)} ({formatDob(customer.dateOfBirth).replace(/\./g, '/')})</span>
                         : <span className="text-red-400">חסר</span>}
                     </div>
                     <div className="flex justify-between">

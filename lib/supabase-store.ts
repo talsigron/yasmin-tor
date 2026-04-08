@@ -174,6 +174,7 @@ export async function fetchProfile(db: SupabaseClient, businessId: string): Prom
     cancelPolicy: data.cancel_policy ?? 'whatsapp',
     maxActiveBookings: data.max_active_bookings ?? 1,
     autoApprove: data.auto_approve ?? null,
+    minHoursBeforeBooking: data.min_hours_before_booking ?? null,
   };
 }
 
@@ -201,6 +202,7 @@ export async function updateProfileData(
   if (updates.cancelPolicy !== undefined) row.cancel_policy = updates.cancelPolicy;
   if (updates.maxActiveBookings !== undefined) row.max_active_bookings = updates.maxActiveBookings;
   if (updates.autoApprove !== undefined) row.auto_approve = updates.autoApprove;
+  if (updates.minHoursBeforeBooking !== undefined) row.min_hours_before_booking = updates.minHoursBeforeBooking;
 
   const { error } = await db
     .from('business_profiles')
@@ -832,7 +834,8 @@ export async function getAvailableSlotsAsync(
   db: SupabaseClient,
   businessId: string,
   date: string,
-  serviceDuration: number
+  serviceDuration: number,
+  minHoursBeforeBooking?: number | null
 ): Promise<SlotInfo[]> {
   const availability = await fetchAvailability(db, businessId, 60);
   const day = availability.find((d) => d.date === date);
@@ -857,6 +860,17 @@ export async function getAvailableSlotsAsync(
   const isToday = date === todayStr;
   const currentMinutes = isToday ? now.getHours() * 60 + now.getMinutes() : 0;
 
+  // Calculate minimum allowed slot time based on minHoursBeforeBooking
+  let minAllowedMinutes = 0;
+  if (minHoursBeforeBooking && minHoursBeforeBooking > 0) {
+    const minTime = new Date(now.getTime() + minHoursBeforeBooking * 60 * 60 * 1000);
+    const minDateStr = toDateStr(minTime);
+    if (date < minDateStr) return []; // entire day is too soon
+    if (date === minDateStr) {
+      minAllowedMinutes = minTime.getHours() * 60 + minTime.getMinutes();
+    }
+  }
+
   for (const timeRange of day.slots) {
     const [startH, startM] = timeRange.start.split(':').map(Number);
     const [endH, endM] = timeRange.end.split(':').map(Number);
@@ -865,6 +879,7 @@ export async function getAvailableSlotsAsync(
 
     for (let time = rangeStart; time + serviceDuration <= rangeEnd; time += 30) {
       if (isToday && time <= currentMinutes) continue;
+      if (minAllowedMinutes > 0 && time < minAllowedMinutes) continue;
 
       const slotStart = time;
       const slotEnd = time + serviceDuration;

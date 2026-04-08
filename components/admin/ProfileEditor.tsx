@@ -389,6 +389,37 @@ export default function ProfileEditor() {
                   : labels.cancelViaWhatsapp}
               </p>
             </div>
+
+            <div className="border-t border-gray-100 pt-4 mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">זמן מינימלי לפני הזמנה</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 0, label: 'כל הזמן' },
+                  { value: 1, label: 'שעה' },
+                  { value: 2, label: 'שעתיים' },
+                  { value: 3, label: '3 שעות' },
+                  { value: 4, label: '4 שעות' },
+                  { value: 5, label: '5 שעות' },
+                  { value: 6, label: '6 שעות' },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setProfile({ ...profile, minHoursBeforeBooking: opt.value })}
+                    className={cn(
+                      'py-2 px-3 rounded-lg text-xs font-medium border-2 transition-all cursor-pointer',
+                      ((profile.minHoursBeforeBooking ?? 0) === opt.value)
+                        ? 'border-mint-400 bg-mint-50 text-mint-700'
+                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-500 mt-1">
+                כמה זמן מראש לקוח צריך להזמין לפני {labels.booking}
+              </p>
+            </div>
           </div>
         )}
       </div>

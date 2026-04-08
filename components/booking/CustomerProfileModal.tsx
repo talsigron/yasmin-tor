@@ -9,6 +9,7 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Upload, Check, X as XIcon } from 'lucide-react';
+import DateOfBirthInput from '@/components/ui/DateOfBirthInput';
 
 interface Props {
   isOpen: boolean;
@@ -119,11 +120,7 @@ export default function CustomerProfileModal({ isOpen, onClose, customer, onUpda
 
       {/* Editable fields */}
       <div className="space-y-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">תאריך לידה</label>
-          <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
-            className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-white focus:border-mint-400 focus:ring-4 focus:ring-mint-100 focus:outline-none transition-all text-sm" dir="ltr" />
-        </div>
+        <DateOfBirthInput label="תאריך לידה" value={dateOfBirth} onChange={setDateOfBirth} />
 
         <Input label="תעודת זהות" type="text" placeholder="מספר ת.ז" value={idNumber}
           onChange={(e) => setIdNumber(e.target.value)} dir="ltr" className="text-left" />

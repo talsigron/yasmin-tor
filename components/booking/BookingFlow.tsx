@@ -72,12 +72,12 @@ export default function BookingFlow({ service, onClose }: BookingFlowProps) {
   useEffect(() => {
     if (selectedDate) {
       setSlotsLoading(true);
-      getAvailableSlotsAsync(supabase, businessId, selectedDate, service.duration)
+      getAvailableSlotsAsync(supabase, businessId, selectedDate, service.duration, profileData?.minHoursBeforeBooking)
         .then((slots) => setAvailableSlots(slots))
         .catch(() => setAvailableSlots([]))
         .finally(() => setSlotsLoading(false));
     }
-  }, [selectedDate, service.duration, supabase, businessId]);
+  }, [selectedDate, service.duration, supabase, businessId, profileData?.minHoursBeforeBooking]);
 
   const handleConfirm = async () => {
     const customer = getCurrentCustomer(tenantId);

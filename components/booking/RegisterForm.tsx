@@ -8,6 +8,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { User, Phone, Clock, Bell, Upload } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import DateOfBirthInput from '@/components/ui/DateOfBirthInput';
 
 interface RegisterFormProps {
   onComplete: () => void;
@@ -151,11 +152,7 @@ export default function RegisterForm({ onComplete }: RegisterFormProps) {
         <div className="space-y-3 bg-gray-50 rounded-xl p-4">
           <p className="text-xs font-medium text-gray-600 mb-2">פרטים נוספים (אופציונלי — ניתן להשלים מאוחר יותר)</p>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">תאריך לידה</label>
-            <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-white focus:border-mint-400 focus:ring-4 focus:ring-mint-100 focus:outline-none transition-all text-sm" dir="ltr" />
-          </div>
+          <DateOfBirthInput label="תאריך לידה" value={dateOfBirth} onChange={setDateOfBirth} />
 
           <Input label="תעודת זהות" type="text" placeholder="מספר ת.ז" value={idNumber}
             onChange={(e) => setIdNumber(e.target.value)} dir="ltr" className="text-left" />
