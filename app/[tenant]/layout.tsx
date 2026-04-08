@@ -1,29 +1,36 @@
-'use client';
-
 import { notFound } from 'next/navigation';
-import { use } from 'react';
-import { getTenantConfig } from '@/tenants';
-import { getSupabaseClient } from '@/lib/supabase';
-import { TenantContext } from '@/contexts/TenantContext';
+import { getTenantConfigAsync } from '@/tenants';
+import { TenantClientProvider } from './tenant-provider';
 
-export default function TenantLayout({
+export default async function TenantLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  params: Promise<any>;
+  params: Promise<{ tenant: string }>;
 }) {
-  const { tenant } = use(params) as { tenant: string };
-  const config = getTenantConfig(tenant);
+  const { tenant } = await params;
+  const config = await getTenantConfigAsync(tenant);
 
   if (!config) notFound();
 
-  const supabase = getSupabaseClient(config.supabaseUrl, config.supabaseAnonKey);
+  // Serialize only plain data (no functions) for client
+  const configData = {
+    id: config.id,
+    slug: config.slug,
+    category: config.category,
+    businessId: config.businessId,
+    supabaseUrl: config.supabaseUrl,
+    supabaseAnonKey: config.supabaseAnonKey,
+    features: config.features,
+    defaultColors: config.defaultColors,
+    defaultPassword: config.defaultPassword,
+    storagePrefix: config.storagePrefix,
+  };
 
   return (
-    <TenantContext.Provider value={{ config, supabase }}>
+    <TenantClientProvider configData={configData}>
       {children}
-    </TenantContext.Provider>
+    </TenantClientProvider>
   );
 }

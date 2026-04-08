@@ -213,17 +213,50 @@ export default function SuperAdminContent() {
     }
   };
 
-  const openWhatsApp = (reg: Registration) => {
+  const handleApprove = async (reg: Registration) => {
+    setUpdatingId(reg.id);
+    try {
+      const res = await fetch('/api/approve-business', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrationId: reg.id }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error ?? 'שגיאה באישור');
+        return;
+      }
+
+      // Update local state
+      setRegistrations((prev) =>
+        prev.map((r) => (r.id === reg.id ? { ...r, status: 'approved' } : r))
+      );
+
+      // Open WhatsApp with REAL slug + password
+      openWhatsApp(reg, data.slug, data.password);
+    } catch (err) {
+      console.error('Failed to approve:', err);
+      alert('שגיאה באישור העסק');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const openWhatsApp = (reg: Registration, slug?: string, password?: string) => {
     const categoryLabel = CATEGORY_LABELS[reg.category] ?? reg.category;
+    const link = slug ? `yasmin-tor.vercel.app/${slug}/admin` : '[SLUG]';
+    const pass = password ?? '[PASSWORD]';
     const msg = encodeURIComponent(
-      `שלום ${reg.owner_name}! 👋\n` +
+      `שלום ${reg.owner_name}!\n` +
         `קיבלתי את פנייתך ל-יסמין תור.\n` +
         `שם העסק: ${reg.business_name} (${categoryLabel})\n\n` +
         `המערכת שלך מוכנה! הנה הפרטים:\n` +
-        `🔗 לינק: yasmin-tor.vercel.app/[SLUG]\n` +
-        `🔑 סיסמה ראשונית: [PASSWORD]\n\n` +
+        `לינק לדשבורד: ${link}\n` +
+        `סיסמה ראשונית: ${pass}\n\n` +
+        `עכשיו נכנסים ללינק, מגדירים שירותים ושעות פעילות, ומתחילים לקבל תורים.\n\n` +
         `המחיר: 50 ₪/חודש (חודש ראשון חינם)\n` +
-        `לכל שאלה — אני כאן 😊`
+        `לכל שאלה — אני כאן`
     );
     window.open(`https://wa.me/972${reg.phone.replace(/[-\s]/g, '')}?text=${msg}`, '_blank');
   };
@@ -524,12 +557,12 @@ export default function SuperAdminContent() {
                       {reg.status === 'pending' && (
                         <>
                           <button
-                            onClick={() => handleStatusChange(reg.id, 'approved')}
+                            onClick={() => handleApprove(reg)}
                             disabled={updatingId === reg.id}
                             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors cursor-pointer disabled:opacity-50"
                           >
                             <CheckCircle size={14} />
-                            אשר
+                            {updatingId === reg.id ? 'יוצר עסק...' : 'אשר + צור עסק'}
                           </button>
                           <button
                             onClick={() => handleStatusChange(reg.id, 'rejected')}
