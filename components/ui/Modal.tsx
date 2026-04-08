@@ -113,7 +113,7 @@ export default function Modal({
         onTouchEnd={handleTouchEnd}
         className={cn(
           'relative w-full bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl animate-slide-up',
-          'max-h-[90vh] overflow-y-auto',
+          'max-h-[85dvh] overflow-y-auto',
           sizes[size]
         )}
       >

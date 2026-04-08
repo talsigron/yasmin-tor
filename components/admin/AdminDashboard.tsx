@@ -94,17 +94,17 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           <div className="flex items-center gap-2">
             {isNotificationSupported() && (
               <button onClick={toggleNotifications}
-                className="p-2 rounded-lg transition-colors cursor-pointer"
+                className="p-2.5 rounded-xl transition-all active:scale-90 cursor-pointer"
                 style={{ backgroundColor: notificationsOn ? `${brandPrimary}15` : undefined, color: notificationsOn ? brandPrimary : '#9CA3AF' }}
                 title={notificationsOn ? 'התראות פעילות' : 'הפעל התראות'}>
-                {notificationsOn ? <Bell size={18} /> : <BellOff size={18} />}
+                {notificationsOn ? <Bell size={20} /> : <BellOff size={20} />}
               </button>
             )}
-            <Link href={`/${slug}`} className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600">
-              <Home size={18} />
+            <Link href={`/${slug}`} className="p-2.5 rounded-xl hover:bg-gray-100 transition-all active:scale-90 text-gray-400 hover:text-gray-600">
+              <Home size={20} />
             </Link>
-            <button onClick={onLogout} className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 cursor-pointer">
-              <LogOut size={18} />
+            <button onClick={onLogout} className="p-2.5 rounded-xl hover:bg-gray-100 transition-all active:scale-90 text-gray-400 hover:text-gray-600 cursor-pointer">
+              <LogOut size={20} />
             </button>
           </div>
         </div>
@@ -125,17 +125,17 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             const isActive = activeTab === tab.key;
             return (
               <button key={tab.key} onClick={() => handleTabChange(tab.key)}
-                className="flex-1 flex flex-col items-center gap-1 py-3 transition-colors cursor-pointer relative"
+                className="flex-1 flex flex-col items-center gap-1 py-4 transition-all active:scale-90 cursor-pointer relative"
                 style={{ color: isActive ? brandPrimary : '#9CA3AF' }}>
                 <div className="relative">
-                  <Icon size={18} />
+                  <Icon size={22} />
                   {tab.key === 'customers' && pendingCount > 0 && (
                     <span className="absolute -top-1.5 -right-2.5 w-4 h-4 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center">
                       {pendingCount}
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] font-medium">{tab.label}</span>
+                <span className="text-[11px] font-medium">{tab.label}</span>
                 {isActive && (
                   <div className="absolute top-0 w-8 h-0.5 rounded-full" style={{ backgroundColor: brandPrimary }} />
                 )}

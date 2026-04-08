@@ -314,3 +314,15 @@ body {
 .gold-check {
   color: var(--c-gold);
 }
+
+/* ===== Touch press feedback ===== */
+button,
+a[href] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled):active,
+a[href]:active {
+  opacity: 0.65;
+  transition: opacity 0.08s ease;
+}

@@ -131,23 +131,23 @@ export default function TenantHomePage() {
             <span className="font-display text-lg tracking-wide" style={{ color: brandPrimary }}>{profile.name}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Link href={`/${slug}/admin`} className="p-2 rounded-full hover:bg-gray-100 transition-colors ml-1" title="מערכת ניהול">
-              <Settings size={16} className="text-gray-400" />
+            <Link href={`/${slug}/admin`} className="p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-90 ml-1" title="מערכת ניהול">
+              <Settings size={18} className="text-gray-400" />
             </Link>
             <a href={profile.instagram} target="_blank" rel="noopener noreferrer"
-              className="p-2.5 rounded-full hover:bg-pink-50 text-pink-500 transition-colors" title="Instagram">
-              <InstagramIcon size={18} />
+              className="p-2.5 rounded-full hover:bg-pink-50 text-pink-500 transition-all active:scale-90" title="Instagram">
+              <InstagramIcon size={20} />
             </a>
-            <a href={`tel:${phoneNumber}`} className="p-2.5 rounded-full hover:bg-gray-50 transition-colors" style={{ color: brandPrimary }} title="התקשר">
-              <Phone size={18} />
+            <a href={`tel:${phoneNumber}`} className="p-2.5 rounded-full hover:bg-gray-50 transition-all active:scale-90" style={{ color: brandPrimary }} title="התקשר">
+              <Phone size={20} />
             </a>
             <a href={whatsappLink} target="_blank" rel="noopener noreferrer"
-              className="p-2.5 rounded-full hover:bg-green-50 text-green-500 transition-colors" title="WhatsApp">
-              <WhatsAppIcon size={18} />
+              className="p-2.5 rounded-full hover:bg-green-50 text-green-500 transition-all active:scale-90" title="WhatsApp">
+              <WhatsAppIcon size={20} />
             </a>
             {customer && (
-              <button onClick={handleLogout} className="p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer mr-1" title="התנתקות">
-                <LogOut size={16} className="text-gray-400" />
+              <button onClick={handleLogout} className="p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-90 cursor-pointer mr-1" title="התנתקות">
+                <LogOut size={18} className="text-gray-400" />
               </button>
             )}
           </div>
