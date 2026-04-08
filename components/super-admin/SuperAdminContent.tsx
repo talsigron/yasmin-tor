@@ -18,6 +18,8 @@ import {
   CheckCircle,
   XCircle,
   MessageCircle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 const SUPER_ADMIN_PASSWORD = 'yasmin2024';
@@ -147,6 +149,7 @@ export default function SuperAdminContent() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [businesses, setBusinesses] = useState<BusinessWithStats[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
@@ -296,16 +299,28 @@ export default function SuperAdminContent() {
             <p className="text-gray-400 text-sm mt-1">ניהול ראשי – Super Admin</p>
           </div>
 
-          <form onSubmit={handleLogin} className="bg-gray-800 rounded-2xl p-6 shadow-xl">
+          <form onSubmit={handleLogin} className="bg-gray-800 rounded-2xl p-6 shadow-xl" autoComplete="on">
             <label className="block text-sm font-medium text-gray-300 mb-2">סיסמת מנהל</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-colors"
-              placeholder="הכנס סיסמה"
-              autoFocus
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                id="super-admin-password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-colors pl-11"
+                placeholder="הכנס סיסמה"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {loginError && <p className="text-red-400 text-sm mt-2">{loginError}</p>}
             <button
               type="submit"
