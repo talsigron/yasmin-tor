@@ -10,7 +10,7 @@ import { Lock, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminPageContent() {
   const { supabase, config } = useTenant();
-  const { businessId, id: tenantId, defaultColors } = config;
+  const { businessId, id: tenantId, slug, defaultColors } = config;
   const sessionKey = `${tenantId}_admin_session`;
   const brandPrimary = defaultColors.primary;
 
@@ -77,6 +77,16 @@ export default function AdminPageContent() {
             </div>
             <Button type="submit" variant="primary" className="w-full" size="lg">כניסה</Button>
           </form>
+          <div className="text-center mt-5">
+            <a
+              href={`https://wa.me/972504558444?text=${encodeURIComponent(`שלום טל, שכחתי את הסיסמה לדשבורד של ${slug}`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-gray-400 hover:underline"
+            >
+              שכחתי סיסמה
+            </a>
+          </div>
         </div>
       </div>
     );
