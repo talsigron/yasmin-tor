@@ -17,6 +17,7 @@ import {
   reorderServices,
   fetchProfile,
   updateProfileData,
+  fetchAutoApproveSetting,
   fetchCustomers,
   registerNewCustomer,
   approveCustomerById,
@@ -35,6 +36,7 @@ import {
   reorderGalleryImages,
   GalleryImage,
   DefaultHoursEntry,
+  CustomerExtendedFields,
 } from '@/lib/supabase-store';
 import { useTenant } from '@/contexts/TenantContext';
 
@@ -134,6 +136,34 @@ export function useProfile() {
   return { profile, loading, refresh, update };
 }
 
+// ─── useBusinessSettings ──────────────────────────────────
+
+export function useBusinessSettings() {
+  const { supabase, config } = useTenant();
+  const { businessId, features } = config;
+  const [dbAutoApprove, setDbAutoApprove] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAutoApproveSetting(supabase, businessId).then((val) => {
+      setDbAutoApprove(val);
+      setLoading(false);
+    });
+  }, [supabase, businessId]);
+
+  const autoApprove = dbAutoApprove !== null ? dbAutoApprove : features.autoApprove;
+
+  const toggleAutoApprove = useCallback(
+    async (value: boolean) => {
+      await updateProfileData(supabase, businessId, { autoApprove: value });
+      setDbAutoApprove(value);
+    },
+    [supabase, businessId]
+  );
+
+  return { autoApprove, loading, toggleAutoApprove };
+}
+
 // ─── useCustomers ─────────────────────────────────────────
 
 export function useCustomers() {
@@ -162,9 +192,11 @@ export function useCustomers() {
   useEffect(() => { refresh(); }, [refresh]);
 
   const register = useCallback(
-    async (name: string, phone: string, notificationEnabled = false) => {
+    async (name: string, phone: string, notificationEnabled = false, extended?: CustomerExtendedFields) => {
+      const dbVal = await fetchAutoApproveSetting(supabase, businessId);
+      const effectiveAutoApprove = dbVal !== null ? dbVal : features.autoApprove;
       const customer = await registerNewCustomer(
-        supabase, businessId, name, phone, notificationEnabled, features.autoApprove
+        supabase, businessId, name, phone, notificationEnabled, effectiveAutoApprove, extended
       );
       await refresh();
       return customer;

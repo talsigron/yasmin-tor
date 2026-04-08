@@ -29,6 +29,12 @@ export interface Customer {
   status: 'pending' | 'approved' | 'rejected';
   notificationEnabled: boolean;
   createdAt: string;
+  // Extended fields (fitness category)
+  dateOfBirth?: string | null;
+  idNumber?: string | null;
+  gender?: 'male' | 'female' | 'other' | null;
+  paymentMethod?: 'cash' | 'bit' | 'bank_transfer' | 'check' | null;
+  healthDeclarationUrl?: string | null;
 }
 
 export interface Appointment {
@@ -68,4 +74,5 @@ export interface BusinessProfile {
   maxBookingDays?: number; // 7, 14, 21, 30, or 0 (unlimited)
   cancelPolicy?: 'website' | 'whatsapp'; // how customers can cancel
   maxActiveBookings?: number; // 1, 2, 3, 4, or 0 (unlimited)
+  autoApprove?: boolean | null; // null = use static config default
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useCustomers, useAppointments, useProfile } from '@/hooks/useSupabase';
+import { useCustomers, useAppointments, useProfile, useBusinessSettings } from '@/hooks/useSupabase';
 import { Customer } from '@/lib/types';
 import { cn, formatDate } from '@/lib/utils';
 import {
@@ -11,6 +11,9 @@ import {
   Calendar,
   Check,
   X,
+  ChevronDown,
+  AlertCircle,
+  FileText,
 } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
@@ -23,15 +26,33 @@ interface ApprovalToast {
   visible: boolean;
 }
 
+const GENDER_MAP: Record<string, string> = { male: 'זכר', female: 'נקבה', other: 'אחר' };
+const PAYMENT_MAP: Record<string, string> = { cash: 'מזומן', bit: 'ביט', bank_transfer: 'העברה בנקאית', check: 'שיק' };
+
+function calcAge(dob: string): string {
+  const birth = new Date(dob);
+  const now = new Date();
+  const diff = (now.getTime() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+  return diff.toFixed(1);
+}
+
+function formatDob(dob: string): string {
+  const d = new Date(dob);
+  return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getFullYear()}`;
+}
+
 export default function CustomersView() {
   const { config } = useTenant();
-  const { labels, slug } = config;
+  const { labels, slug, category } = config;
+  const isFitness = category === 'fitness';
   const { customers, loading: custLoading, approve, reject } = useCustomers();
   const { appointments, loading: apptLoading } = useAppointments();
   const { profile } = useProfile();
+  const { autoApprove, toggleAutoApprove } = useBusinessSettings();
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<CustomerTab>('all');
   const [approvalToast, setApprovalToast] = useState<ApprovalToast | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const loading = custLoading || apptLoading;
 
   const pendingCount = customers.filter((c) => c.status === 'pending').length;
@@ -132,6 +153,32 @@ export default function CustomersView() {
         </span>
       </div>
 
+      {/* Auto-approve toggle */}
+      <div className="bg-gray-50 rounded-xl p-3 mb-4 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-gray-700">
+            {autoApprove ? 'אישור אוטומטי' : 'אישור ידני'}
+          </p>
+          <p className="text-[11px] text-gray-500 mt-0.5">
+            {autoApprove
+              ? 'לקוחות חדשים יכולים לקבוע תורים מיד'
+              : 'תאשר כל לקוח חדש לפני שיוכל לקבוע תורים'}
+          </p>
+        </div>
+        <button
+          onClick={() => toggleAutoApprove(!autoApprove)}
+          className={cn(
+            'relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 cursor-pointer',
+            autoApprove ? 'bg-mint-500' : 'bg-gray-300'
+          )}
+        >
+          <span className={cn(
+            'absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
+            autoApprove ? 'right-0.5' : 'right-[22px]'
+          )} />
+        </button>
+      </div>
+
       {/* Tabs */}
       <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 mb-4">
         <button
@@ -186,12 +233,24 @@ export default function CustomersView() {
             const apptCount = getCustomerAppointments(customer.id).length;
             const lastAppt = getLastAppointment(customer.id);
 
+            const isExpanded = expandedId === customer.id;
+            const missingFields = isFitness ? [
+              !customer.idNumber && 'תעודת זהות',
+              !customer.dateOfBirth && 'תאריך לידה',
+              !customer.gender && 'מין',
+              !customer.paymentMethod && 'אופן תשלום',
+              !customer.healthDeclarationUrl && 'הצהרת בריאות',
+            ].filter(Boolean) as string[] : [];
+
             return (
               <div
                 key={customer.id}
                 className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition-shadow"
               >
-                <div className="flex items-start justify-between gap-3">
+                <div
+                  className={cn('flex items-start justify-between gap-3', isFitness && 'cursor-pointer')}
+                  onClick={() => isFitness && setExpandedId(isExpanded ? null : customer.id)}
+                >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-bold text-gray-800 text-sm">
@@ -203,6 +262,12 @@ export default function CustomersView() {
                       )}>
                         {statusLabel(customer.status || 'approved')}
                       </span>
+                      {isFitness && missingFields.length > 0 && (
+                        <span className="text-[10px] text-amber-600 flex items-center gap-0.5">
+                          <AlertCircle size={10} />
+                          {missingFields.length} חסרים
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-500 mb-2">
                       <span className="flex items-center gap-1" dir="ltr">
@@ -222,18 +287,18 @@ export default function CustomersView() {
                   </div>
 
                   {/* Action buttons */}
-                  <div className="flex gap-1.5 shrink-0">
+                  <div className="flex gap-1.5 shrink-0 items-center">
                     {customer.status === 'pending' && (
                       <>
                         <button
-                          onClick={() => handleApprove(customer.id)}
+                          onClick={(e) => { e.stopPropagation(); handleApprove(customer.id); }}
                           className="w-9 h-9 rounded-full flex items-center justify-center bg-mint-50 text-mint-600 hover:bg-mint-100 transition-colors cursor-pointer"
                           title="אישור"
                         >
                           <Check size={15} />
                         </button>
                         <button
-                          onClick={() => handleReject(customer.id)}
+                          onClick={(e) => { e.stopPropagation(); handleReject(customer.id); }}
                           className="w-9 h-9 rounded-full flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-100 transition-colors cursor-pointer"
                           title="דחייה"
                         >
@@ -243,8 +308,9 @@ export default function CustomersView() {
                     )}
                     <a
                       href={`tel:${customer.phone}`}
+                      onClick={(e) => e.stopPropagation()}
                       className="w-9 h-9 rounded-full flex items-center justify-center bg-mint-50 text-mint-600 hover:bg-mint-100 transition-colors"
-                      title="התקשרי"
+                      title="התקשר"
                     >
                       <Phone size={15} />
                     </a>
@@ -252,13 +318,59 @@ export default function CustomersView() {
                       href={`https://wa.me/972${customer.phone.replace(/^0/, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className="w-9 h-9 rounded-full flex items-center justify-center bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
                       title="WhatsApp"
                     >
                       <WhatsAppIcon size={15} />
                     </a>
+                    {isFitness && (
+                      <ChevronDown size={14} className={cn('text-gray-400 transition-transform', isExpanded && 'rotate-180')} />
+                    )}
                   </div>
                 </div>
+
+                {/* Expanded fitness details */}
+                {isFitness && isExpanded && (
+                  <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">תעודת זהות</span>
+                      {customer.idNumber
+                        ? <span className="font-medium text-gray-800" dir="ltr">{customer.idNumber}</span>
+                        : <span className="text-red-400">חסר</span>}
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">גיל</span>
+                      {customer.dateOfBirth
+                        ? <span className="font-medium text-gray-800">{calcAge(customer.dateOfBirth)} ({formatDob(customer.dateOfBirth)})</span>
+                        : <span className="text-red-400">חסר</span>}
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">מין</span>
+                      {customer.gender
+                        ? <span className="font-medium text-gray-800">{GENDER_MAP[customer.gender] ?? customer.gender}</span>
+                        : <span className="text-red-400">חסר</span>}
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">טלפון</span>
+                      <span className="font-medium text-gray-800" dir="ltr">{customer.phone}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">אופן תשלום</span>
+                      {customer.paymentMethod
+                        ? <span className="font-medium text-gray-800">{PAYMENT_MAP[customer.paymentMethod] ?? customer.paymentMethod}</span>
+                        : <span className="text-red-400">חסר</span>}
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">הצהרת בריאות</span>
+                      {customer.healthDeclarationUrl
+                        ? <a href={customer.healthDeclarationUrl} target="_blank" rel="noopener noreferrer" className="text-mint-600 font-medium flex items-center gap-1">
+                            <FileText size={11} /> יש
+                          </a>
+                        : <span className="text-red-400">אין</span>}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { registerNewCustomer } from '@/lib/supabase-store';
+import { registerNewCustomer, uploadHealthDeclaration, fetchAutoApproveSetting } from '@/lib/supabase-store';
+import type { CustomerExtendedFields } from '@/lib/supabase-store';
 import { setCurrentCustomer } from '@/lib/store';
 import { useTenant } from '@/contexts/TenantContext';
-import { User, Phone, Clock, Bell } from 'lucide-react';
+import { User, Phone, Clock, Bell, Upload } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
@@ -25,6 +26,8 @@ export default function RegisterForm({ onComplete }: RegisterFormProps) {
   const { supabase, config } = useTenant();
   const { businessId, features, labels, id: tenantId, defaultColors, slug } = config;
 
+  const isFitness = config.category === 'fitness';
+
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [notifyEnabled, setNotifyEnabled] = useState(false);
@@ -32,6 +35,13 @@ export default function RegisterForm({ onComplete }: RegisterFormProps) {
   const [errors, setErrors] = useState<{ name?: string; phone?: string; consent?: string }>({});
   const [pendingMessage, setPendingMessage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Extended fitness fields
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [idNumber, setIdNumber] = useState('');
+  const [gender, setGender] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [healthFile, setHealthFile] = useState<File | null>(null);
 
   const brandPrimary = defaultColors.primary;
 
@@ -53,11 +63,39 @@ export default function RegisterForm({ onComplete }: RegisterFormProps) {
       let notificationGranted = false;
       if (notifyEnabled) notificationGranted = await requestNotificationPermission();
 
+      // Resolve effective autoApprove from DB (overrides static config)
+      const dbVal = await fetchAutoApproveSetting(supabase, businessId);
+      const effectiveAutoApprove = dbVal !== null ? dbVal : features.autoApprove;
+
+      // Build extended fields for fitness
+      let extended: CustomerExtendedFields | undefined;
+      if (isFitness) {
+        extended = {};
+        if (dateOfBirth) extended.dateOfBirth = dateOfBirth;
+        if (idNumber.trim()) extended.idNumber = idNumber.trim();
+        if (gender) extended.gender = gender as CustomerExtendedFields['gender'];
+        if (paymentMethod) extended.paymentMethod = paymentMethod as CustomerExtendedFields['paymentMethod'];
+      }
+
       const customer = await registerNewCustomer(
         supabase, businessId,
         name.trim(), phone.replace(/[-\s]/g, ''),
-        notificationGranted, features.autoApprove
+        notificationGranted, effectiveAutoApprove, extended
       );
+
+      // Upload health declaration after customer is created (need customer.id)
+      if (isFitness && healthFile && customer.id) {
+        try {
+          const url = await uploadHealthDeclaration(supabase, businessId, customer.id, healthFile);
+          customer.healthDeclarationUrl = url;
+          // Update customer record with the URL
+          const { updateCustomerProfile } = await import('@/lib/supabase-store');
+          await updateCustomerProfile(supabase, businessId, customer.id, { healthDeclarationUrl: url });
+        } catch (uploadErr) {
+          console.error('Health declaration upload failed:', uploadErr);
+        }
+      }
+
       setCurrentCustomer(tenantId, customer);
 
       if (customer.status === 'pending') {
@@ -107,6 +145,57 @@ export default function RegisterForm({ onComplete }: RegisterFormProps) {
       <Input label="מספר טלפון" type="tel" placeholder="050-1234567" value={phone}
         onChange={(e) => setPhone(e.target.value)} error={errors.phone}
         icon={<Phone size={18} />} autoComplete="tel" dir="ltr" className="text-left" />
+
+      {/* Extended fitness fields */}
+      {isFitness && (
+        <div className="space-y-3 bg-gray-50 rounded-xl p-4">
+          <p className="text-xs font-medium text-gray-600 mb-2">פרטים נוספים (אופציונלי — ניתן להשלים מאוחר יותר)</p>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">תאריך לידה</label>
+            <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-white focus:border-mint-400 focus:ring-4 focus:ring-mint-100 focus:outline-none transition-all text-sm" dir="ltr" />
+          </div>
+
+          <Input label="תעודת זהות" type="text" placeholder="מספר ת.ז" value={idNumber}
+            onChange={(e) => setIdNumber(e.target.value)} dir="ltr" className="text-left" />
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">מין</label>
+            <select value={gender} onChange={(e) => setGender(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-white focus:border-mint-400 focus:ring-4 focus:ring-mint-100 focus:outline-none transition-all text-sm text-gray-700">
+              <option value="">לא צוין</option>
+              <option value="male">זכר</option>
+              <option value="female">נקבה</option>
+              <option value="other">אחר</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">אופן תשלום</label>
+            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-white focus:border-mint-400 focus:ring-4 focus:ring-mint-100 focus:outline-none transition-all text-sm text-gray-700">
+              <option value="">לא צוין</option>
+              <option value="cash">מזומן</option>
+              <option value="bit">ביט</option>
+              <option value="bank_transfer">העברה בנקאית</option>
+              <option value="check">שיק</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">הצהרת בריאות</label>
+            <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-gray-300 bg-white cursor-pointer hover:border-mint-400 transition-colors">
+              <Upload size={16} className="text-gray-400 shrink-0" />
+              <span className="text-sm text-gray-500 truncate">
+                {healthFile ? healthFile.name : 'העלאת תמונה או מסמך'}
+              </span>
+              <input type="file" accept="image/*,.pdf" className="hidden"
+                onChange={(e) => setHealthFile(e.target.files?.[0] ?? null)} />
+            </label>
+          </div>
+        </div>
+      )}
 
       <div className="bg-gray-50 rounded-xl p-3">
         <label className="flex items-center gap-3 cursor-pointer">

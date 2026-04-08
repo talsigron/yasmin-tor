@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Service, Appointment } from '@/lib/types';
+import { Service, Appointment, Customer } from '@/lib/types';
 import { getCurrentCustomer, logoutCustomer } from '@/lib/store';
-import { fetchCustomerAppointments, cancelAppointmentByCustomer } from '@/lib/supabase-store';
+import { fetchCustomerAppointments, cancelAppointmentByCustomer, fetchCustomerById } from '@/lib/supabase-store';
 import { useServices, useProfile, useGallery } from '@/hooks/useSupabase';
 import { useTenant } from '@/contexts/TenantContext';
 import ServiceCard from './ServiceCard';
@@ -19,6 +19,7 @@ import {
 import InstagramIcon from '@/components/icons/InstagramIcon';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import TenantHead from '@/components/TenantHead';
+import CustomerProfileModal from './CustomerProfileModal';
 
 const CACHE_KEY_PREFIX = 'profile_cache_';
 
@@ -48,6 +49,9 @@ export default function TenantHomePage() {
   const [showRegister, setShowRegister] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [myAppointments, setMyAppointments] = useState<Appointment[]>([]);
+  const [showProfile, setShowProfile] = useState(false);
+  const [fullCustomer, setFullCustomer] = useState<Customer | null>(null);
+  const isFitness = config.category === 'fitness';
 
   const services = allServices.filter((s) => s.active);
   const profile = profileData || { name: '', subtitle: '', brands: '', logo: '', description: '', phone: '', instagram: '', address: '', images: [], enableBit: false, bitType: 'regular' as const, enablePaybox: false };
@@ -215,6 +219,19 @@ export default function TenantHomePage() {
                 <User size={14} />
                 {labels.hello} {customer.fullName}
               </span>
+              {isFitness && (
+                <button
+                  onClick={async () => {
+                    const fresh = await fetchCustomerById(supabase, businessId, customer.id);
+                    setFullCustomer(fresh ?? customer);
+                    setShowProfile(true);
+                  }}
+                  className="block mx-auto text-xs underline cursor-pointer"
+                  style={{ color: brandPrimary }}
+                >
+                  השלמת פרופיל
+                </button>
+              )}
               {myAppointments.length > 0 && (
                 <div className="max-w-sm mx-auto space-y-2">
                   <p className="text-xs font-bold text-gray-600 flex items-center justify-center gap-1">
@@ -394,6 +411,18 @@ export default function TenantHomePage() {
         title={selectedService ? `${labels.makeBooking} - ${selectedService.name}` : ''} size="md">
         {selectedService && <BookingFlow service={selectedService} onClose={handleCloseBooking} />}
       </Modal>
+
+      {isFitness && fullCustomer && (
+        <CustomerProfileModal
+          isOpen={showProfile}
+          onClose={() => setShowProfile(false)}
+          customer={fullCustomer}
+          onUpdate={(updated) => {
+            setFullCustomer(updated);
+            setCustomer(updated);
+          }}
+        />
+      )}
     </main>
     </>
   );

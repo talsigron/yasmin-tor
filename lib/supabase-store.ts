@@ -173,6 +173,7 @@ export async function fetchProfile(db: SupabaseClient, businessId: string): Prom
     maxBookingDays: data.max_booking_days ?? 30,
     cancelPolicy: data.cancel_policy ?? 'whatsapp',
     maxActiveBookings: data.max_active_bookings ?? 1,
+    autoApprove: data.auto_approve ?? null,
   };
 }
 
@@ -199,6 +200,7 @@ export async function updateProfileData(
   if (updates.maxBookingDays !== undefined) row.max_booking_days = updates.maxBookingDays;
   if (updates.cancelPolicy !== undefined) row.cancel_policy = updates.cancelPolicy;
   if (updates.maxActiveBookings !== undefined) row.max_active_bookings = updates.maxActiveBookings;
+  if (updates.autoApprove !== undefined) row.auto_approve = updates.autoApprove;
 
   const { error } = await db
     .from('business_profiles')
@@ -206,6 +208,17 @@ export async function updateProfileData(
     .eq('id', businessId);
 
   if (error) throw error;
+}
+
+export async function fetchAutoApproveSetting(db: SupabaseClient, businessId: string): Promise<boolean | null> {
+  const { data, error } = await db
+    .from('business_profiles')
+    .select('auto_approve')
+    .eq('id', businessId)
+    .single();
+
+  if (error) return null;
+  return data.auto_approve ?? null;
 }
 
 // ─── Admin Password ───────────────────────────────────────
@@ -241,14 +254,31 @@ export async function fetchCustomers(db: SupabaseClient, businessId: string): Pr
 
   if (error) throw error;
 
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    fullName: row.full_name ?? '',
-    phone: row.phone ?? '',
-    status: row.status ?? 'pending',
-    notificationEnabled: row.notification_enabled ?? false,
-    createdAt: row.created_at ?? new Date().toISOString(),
-  }));
+  return (data ?? []).map((row) => mapCustomerRow(row));
+}
+
+function mapCustomerRow(row: Record<string, unknown>): Customer {
+  return {
+    id: row.id as string,
+    fullName: (row.full_name as string) ?? '',
+    phone: (row.phone as string) ?? '',
+    status: (row.status as Customer['status']) ?? 'pending',
+    notificationEnabled: (row.notification_enabled as boolean) ?? false,
+    createdAt: (row.created_at as string) ?? new Date().toISOString(),
+    dateOfBirth: (row.date_of_birth as string) ?? null,
+    idNumber: (row.id_number as string) ?? null,
+    gender: (row.gender as Customer['gender']) ?? null,
+    paymentMethod: (row.payment_method as Customer['paymentMethod']) ?? null,
+    healthDeclarationUrl: (row.health_declaration_url as string) ?? null,
+  };
+}
+
+export interface CustomerExtendedFields {
+  dateOfBirth?: string | null;
+  idNumber?: string | null;
+  gender?: 'male' | 'female' | 'other' | null;
+  paymentMethod?: 'cash' | 'bit' | 'bank_transfer' | 'check' | null;
+  healthDeclarationUrl?: string | null;
 }
 
 export async function registerNewCustomer(
@@ -257,7 +287,8 @@ export async function registerNewCustomer(
   name: string,
   phone: string,
   notificationEnabled: boolean = false,
-  autoApprove: boolean = false
+  autoApprove: boolean = false,
+  extended?: CustomerExtendedFields
 ): Promise<Customer> {
   const { data: existing } = await db
     .from('customers')
@@ -268,44 +299,42 @@ export async function registerNewCustomer(
 
   if (existing && existing.length > 0) {
     const row = existing[0];
-    if (notificationEnabled && !row.notification_enabled) {
-      await db
-        .from('customers')
-        .update({ notification_enabled: true })
-        .eq('id', row.id);
+    const updates: Record<string, unknown> = {};
+    if (notificationEnabled && !row.notification_enabled) updates.notification_enabled = true;
+    if (extended?.dateOfBirth) updates.date_of_birth = extended.dateOfBirth;
+    if (extended?.idNumber) updates.id_number = extended.idNumber;
+    if (extended?.gender) updates.gender = extended.gender;
+    if (extended?.paymentMethod) updates.payment_method = extended.paymentMethod;
+    if (extended?.healthDeclarationUrl) updates.health_declaration_url = extended.healthDeclarationUrl;
+
+    if (Object.keys(updates).length > 0) {
+      await db.from('customers').update(updates).eq('id', row.id);
     }
-    return {
-      id: row.id,
-      fullName: row.full_name ?? '',
-      phone: row.phone ?? '',
-      status: row.status ?? 'pending',
-      notificationEnabled: notificationEnabled || (row.notification_enabled ?? false),
-      createdAt: row.created_at ?? new Date().toISOString(),
-    };
+    return mapCustomerRow({ ...row, ...updates, notification_enabled: notificationEnabled || row.notification_enabled });
   }
+
+  const insertRow: Record<string, unknown> = {
+    business_id: businessId,
+    full_name: name,
+    phone,
+    status: autoApprove ? 'approved' : 'pending',
+    notification_enabled: notificationEnabled,
+  };
+  if (extended?.dateOfBirth) insertRow.date_of_birth = extended.dateOfBirth;
+  if (extended?.idNumber) insertRow.id_number = extended.idNumber;
+  if (extended?.gender) insertRow.gender = extended.gender;
+  if (extended?.paymentMethod) insertRow.payment_method = extended.paymentMethod;
+  if (extended?.healthDeclarationUrl) insertRow.health_declaration_url = extended.healthDeclarationUrl;
 
   const { data, error } = await db
     .from('customers')
-    .insert({
-      business_id: businessId,
-      full_name: name,
-      phone,
-      status: autoApprove ? 'approved' : 'pending',
-      notification_enabled: notificationEnabled,
-    })
+    .insert(insertRow)
     .select()
     .single();
 
   if (error) throw error;
 
-  return {
-    id: data.id,
-    fullName: data.full_name ?? '',
-    phone: data.phone ?? '',
-    status: data.status ?? 'pending',
-    notificationEnabled: data.notification_enabled ?? false,
-    createdAt: data.created_at ?? new Date().toISOString(),
-  };
+  return mapCustomerRow(data);
 }
 
 export async function checkCustomerStatus(db: SupabaseClient, businessId: string, phone: string): Promise<string | null> {
@@ -349,14 +378,55 @@ export async function fetchPendingCustomers(db: SupabaseClient, businessId: stri
 
   if (error) throw error;
 
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    fullName: row.full_name ?? '',
-    phone: row.phone ?? '',
-    status: 'pending' as const,
-    notificationEnabled: row.notification_enabled ?? false,
-    createdAt: row.created_at ?? new Date().toISOString(),
-  }));
+  return (data ?? []).map((row) => mapCustomerRow(row));
+}
+
+export async function fetchCustomerById(db: SupabaseClient, businessId: string, customerId: string): Promise<Customer | null> {
+  const { data, error } = await db
+    .from('customers')
+    .select('*')
+    .eq('id', customerId)
+    .eq('business_id', businessId)
+    .single();
+
+  if (error || !data) return null;
+  return mapCustomerRow(data);
+}
+
+export async function updateCustomerProfile(
+  db: SupabaseClient,
+  businessId: string,
+  customerId: string,
+  updates: CustomerExtendedFields
+): Promise<void> {
+  const row: Record<string, unknown> = {};
+  if (updates.dateOfBirth !== undefined) row.date_of_birth = updates.dateOfBirth;
+  if (updates.idNumber !== undefined) row.id_number = updates.idNumber;
+  if (updates.gender !== undefined) row.gender = updates.gender;
+  if (updates.paymentMethod !== undefined) row.payment_method = updates.paymentMethod;
+  if (updates.healthDeclarationUrl !== undefined) row.health_declaration_url = updates.healthDeclarationUrl;
+
+  const { error } = await db
+    .from('customers')
+    .update(row)
+    .eq('id', customerId)
+    .eq('business_id', businessId);
+
+  if (error) throw error;
+}
+
+export async function uploadHealthDeclaration(db: SupabaseClient, businessId: string, customerId: string, file: File): Promise<string> {
+  const ext = file.name.split('.').pop() ?? 'jpg';
+  const path = `health-declarations/${businessId}/${customerId}/${Date.now()}.${ext}`;
+
+  const { error } = await db.storage
+    .from('images')
+    .upload(path, file, { upsert: true });
+
+  if (error) throw error;
+
+  const { data } = db.storage.from('images').getPublicUrl(path);
+  return data.publicUrl;
 }
 
 // ─── Appointments ─────────────────────────────────────────
