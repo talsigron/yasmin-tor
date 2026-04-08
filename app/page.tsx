@@ -322,6 +322,7 @@ export default function LandingPage() {
       <section className="py-16 px-5" style={{ background: "#FFFFFF" }}>
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center gap-10 sm:gap-14">
+            {/* Desktop screenshot */}
             <div className="hidden sm:block rounded-2xl overflow-hidden shadow-xl flex-1"
               style={{ border: "1px solid rgba(184,134,11,0.15)", maxWidth: 520 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -330,6 +331,10 @@ export default function LandingPage() {
                 alt="דף הזמנה"
                 style={{ width: "100%", display: "block", objectFit: "cover", objectPosition: "top", height: 340 }}
               />
+            </div>
+            {/* Mobile screenshot */}
+            <div className="sm:hidden">
+              <PhoneFrame src="/screenshots/booking-mobile.png" alt="דף הזמנה מובייל" />
             </div>
             <div className="flex-1 text-right sm:max-w-xs">
               <p
@@ -353,6 +358,7 @@ export default function LandingPage() {
       <section className="py-16 px-5" style={{ background: "#FFFBEF" }}>
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col sm:flex-row-reverse items-center gap-10 sm:gap-14">
+            {/* Desktop screenshot */}
             <div className="hidden sm:block rounded-2xl overflow-hidden shadow-xl flex-1"
               style={{ border: "1px solid rgba(184,134,11,0.15)", maxWidth: 520 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -361,6 +367,10 @@ export default function LandingPage() {
                 alt="לוח ניהול"
                 style={{ width: "100%", display: "block", objectFit: "cover", objectPosition: "top", height: 340 }}
               />
+            </div>
+            {/* Mobile screenshot */}
+            <div className="sm:hidden">
+              <PhoneFrame src="/screenshots/admin-services-mobile.png" alt="ניהול שירותים מובייל" />
             </div>
             <div className="flex-1 text-right sm:max-w-xs">
               <p
