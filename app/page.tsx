@@ -58,11 +58,9 @@ const TERMS_TEXT = `
    CATEGORIES
 ───────────────────────────────────────────── */
 const CATEGORIES = [
-  { value: "nails", label: "ציפורניים / ביוטי" },
-  { value: "fitness", label: "כושר / פילאטיס / יוגה" },
-  { value: "hair", label: "תספורת / שיער" },
-  { value: "spa", label: "ספא / טיפולי פנים" },
-  { value: "other", label: "אחר" },
+  { value: "nails", label: "בונות ציפורניים וביוטי" },
+  { value: "fitness", label: "סטודיו וחדרי כושר" },
+  { value: "other", label: "אחר (פרט)" },
 ];
 
 /* ─────────────────────────────────────────────
@@ -72,35 +70,32 @@ function TermsModal({ onClose }: { onClose: () => void }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.5)" }}
+      style={{ background: "rgba(28,26,16,0.7)" }}
       onClick={onClose}
     >
       <div
-        className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[80vh] flex flex-col"
+        className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            className="text-stone-400 hover:text-stone-600 text-2xl leading-none w-8 h-8 flex items-center justify-center"
           >
             ×
           </button>
-          <h2 className="text-lg font-bold text-gray-900">תנאי שימוש</h2>
+          <h2 className="text-base font-bold text-stone-900">תנאי שימוש</h2>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <pre
-            className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed"
-            dir="rtl"
-          >
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          <pre className="text-sm text-stone-600 whitespace-pre-wrap font-sans leading-relaxed" dir="rtl">
             {TERMS_TEXT.trim()}
           </pre>
         </div>
-        <div className="px-5 py-4 border-t">
+        <div className="px-6 py-4 border-t border-stone-100">
           <button
             onClick={onClose}
-            className="w-full py-3 rounded-xl text-white font-semibold text-base"
-            style={{ background: "#14b898" }}
+            className="w-full py-3 rounded-xl font-bold text-base transition-opacity hover:opacity-90"
+            style={{ background: "#1C1A10", color: "#F0C040" }}
           >
             הבנתי
           </button>
@@ -116,35 +111,22 @@ function TermsModal({ onClose }: { onClose: () => void }) {
 function PhoneFrame({ src, alt }: { src: string; alt: string }) {
   return (
     <div
-      className="relative mx-auto"
+      className="relative mx-auto shrink-0"
       style={{
-        width: 220,
-        height: 440,
-        background: "#1a1a2e",
-        borderRadius: 36,
-        padding: "10px 6px",
-        boxShadow:
-          "0 25px 60px rgba(0,0,0,0.4), inset 0 0 0 2px rgba(255,255,255,0.08)",
+        width: 210,
+        height: 420,
+        background: "#1C1A10",
+        borderRadius: 38,
+        padding: "10px 7px",
+        boxShadow: "0 30px 70px rgba(28,26,16,0.35), 0 0 0 1px rgba(240,192,64,0.15)",
       }}
     >
       {/* notch */}
       <div
         className="absolute top-3 left-1/2 -translate-x-1/2 z-10"
-        style={{
-          width: 60,
-          height: 8,
-          background: "#1a1a2e",
-          borderRadius: 4,
-        }}
+        style={{ width: 56, height: 7, background: "#1C1A10", borderRadius: 4 }}
       />
-      <div
-        style={{
-          borderRadius: 28,
-          overflow: "hidden",
-          height: "100%",
-          background: "#f5fffe",
-        }}
-      >
+      <div style={{ borderRadius: 30, overflow: "hidden", height: "100%" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
@@ -152,27 +134,6 @@ function PhoneFrame({ src, alt }: { src: string; alt: string }) {
           style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
         />
       </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   FEATURE CARD
-───────────────────────────────────────────── */
-function Feature({
-  icon,
-  title,
-  desc,
-}: {
-  icon: string;
-  title: string;
-  desc: string;
-}) {
-  return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-right">
-      <div className="text-3xl mb-3">{icon}</div>
-      <h3 className="font-bold text-gray-900 mb-1">{title}</h3>
-      <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
     </div>
   );
 }
@@ -217,7 +178,6 @@ export default function LandingPage() {
 
       setSubmitted(true);
 
-      // Open WhatsApp to Tal with pre-filled message
       const categoryLabel =
         CATEGORIES.find((c) => c.value === form.category)?.label ?? form.category;
       const msg = encodeURIComponent(
@@ -237,191 +197,233 @@ export default function LandingPage() {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gray-50 font-sans">
+    <div dir="rtl" className="min-h-screen" style={{ background: "#FFFBEF" }}>
       {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
 
       {/* ── NAVBAR ── */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+      <header
+        className="sticky top-0 z-40 backdrop-blur-md border-b"
+        style={{ background: "rgba(255,251,239,0.92)", borderColor: "rgba(184,134,11,0.15)" }}
+      >
+        <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between">
           <button
             onClick={scrollToForm}
-            className="text-sm font-semibold px-4 py-2 rounded-xl text-white"
-            style={{ background: "#14b898" }}
+            className="text-sm font-bold px-5 py-2 rounded-full transition-opacity hover:opacity-80 active:scale-95"
+            style={{ background: "#1C1A10", color: "#F0C040" }}
           >
             השאירו פרטים
           </button>
           <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-gray-900">יסמין תור</span>
-            <span className="text-xl">📅</span>
+            <span
+              className="text-base font-black tracking-tight"
+              style={{ color: "#1C1A10" }}
+            >
+              יסמין תור
+            </span>
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{ background: "#C9940A" }}
+            />
           </div>
         </div>
       </header>
 
       {/* ── HERO ── */}
-      <section className="bg-white pt-12 pb-10 px-4 text-center">
-        <div className="max-w-2xl mx-auto">
-          <div
-            className="inline-block text-xs font-semibold px-3 py-1 rounded-full mb-4"
-            style={{ background: "#e6faf6", color: "#0d9479" }}
-          >
-            🚀 מחיר השקה — מקומות מוגבלים
+      <section
+        className="px-5 pt-12 pb-14 overflow-hidden"
+        style={{
+          background: "#FFFBEF",
+          backgroundImage:
+            "radial-gradient(circle, rgba(184,134,11,0.12) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
+      >
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-10 sm:gap-14">
+            {/* Text side */}
+            <div className="flex-1 text-right">
+              <div
+                className="inline-block text-xs font-bold px-3 py-1.5 rounded-full mb-5"
+                style={{ background: "rgba(201,148,10,0.15)", color: "#8B6914" }}
+              >
+                מחיר השקה — מקומות מוגבלים
+              </div>
+
+              <h1
+                className="text-4xl sm:text-5xl font-black leading-tight mb-5"
+                style={{ color: "#1C1A10" }}
+              >
+                מערכת התורים
+                <br />
+                <span
+                  className="relative inline-block"
+                  style={{ color: "#C9940A" }}
+                >
+                  לעסק שלך
+                  <span
+                    className="absolute bottom-0 right-0 w-full h-1 rounded-full opacity-40"
+                    style={{ background: "#C9940A" }}
+                  />
+                </span>
+              </h1>
+
+              <p className="text-base leading-relaxed mb-8 max-w-sm" style={{ color: "#5A4E30" }}>
+                הלקוחות קובעים תורים בעצמם — 24/7.
+                <br />
+                בלי וואטסאפים, בלי טלפונים, בלי בלגן.
+                <br />
+                תוך שעה העסק שלך מקבל לינק משלו.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-end gap-3">
+                <button
+                  onClick={scrollToForm}
+                  className="font-bold text-base px-7 py-4 rounded-2xl shadow-lg active:scale-95 transition-transform"
+                  style={{ background: "#1C1A10", color: "#F0C040" }}
+                >
+                  רוצה מערכת כזאת — השאר פרטים
+                </button>
+                <p className="text-xs pb-1" style={{ color: "#8B7840" }}>
+                  חודש ראשון חינם · ללא התחייבות
+                </p>
+              </div>
+            </div>
+
+            {/* Phone side */}
+            <div className="shrink-0">
+              <PhoneFrame src="/screenshots/booking-mobile.png" alt="דף הזמנה מובייל" />
+            </div>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-gray-900 leading-tight mb-4">
-            מערכת התורים
-            <br />
-            <span style={{ color: "#14b898" }}>לעסק שלך</span>
-          </h1>
-          <p className="text-gray-500 text-base leading-relaxed mb-8 max-w-md mx-auto">
-            הלקוחות קובעים תורים בעצמם — 24/7. בלי וואטסאפים, בלי טלפונים, בלי
-            בלגן. תוך שעה העסק שלך מקבל לינק משלו.
-          </p>
-          <button
-            onClick={scrollToForm}
-            className="text-white font-bold text-base px-8 py-4 rounded-2xl shadow-lg active:scale-95 transition-transform"
-            style={{ background: "#14b898" }}
-          >
-            רוצה מערכת כזאת — השאר פרטים
-          </button>
-          <p className="text-xs text-gray-400 mt-3">חודש ראשון חינם · ללא התחייבות</p>
         </div>
       </section>
 
-      {/* ── SCREENSHOTS: CUSTOMER VIEW ── */}
-      <section className="py-12 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8">
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
-              ככה הלקוחות שלך קובעים תור
-            </p>
-            <h2 className="text-2xl font-black text-gray-900">
-              דף הזמנה מותאם לעסק שלך
-            </h2>
-            <p className="text-gray-500 text-sm mt-2">
-              לוגו, שם העסק, שירותים, מחירים — הכל מוגדר על ידך
-            </p>
-          </div>
+      {/* ── FEATURES BAR ── */}
+      <div
+        className="py-4 px-5 overflow-x-auto"
+        style={{ background: "#1C1A10" }}
+      >
+        <div className="max-w-5xl mx-auto flex items-center justify-center gap-6 sm:gap-10 whitespace-nowrap">
+          {[
+            "תורים 24/7",
+            "דף הזמנה מותאם",
+            "ניהול לקוחות",
+            "ביט ופייבוקס",
+            "לוח שנה",
+          ].map((f, i) => (
+            <div key={i} className="flex items-center gap-2 text-sm font-medium" style={{ color: "#F0C040" }}>
+              <span className="text-xs opacity-50">✦</span>
+              <span>{f}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Mobile + Desktop side by side */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-            <PhoneFrame
-              src="/screenshots/booking-mobile.png"
-              alt="דף הזמנה מובייל"
-            />
-            <div
-              className="hidden sm:block rounded-2xl overflow-hidden shadow-2xl border border-gray-200"
-              style={{ width: 520, height: 340 }}
-            >
+      {/* ── SCREENSHOTS: CUSTOMER VIEW ── */}
+      <section className="py-16 px-5" style={{ background: "#FFFFFF" }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-10 sm:gap-14">
+            <div className="hidden sm:block rounded-2xl overflow-hidden shadow-xl flex-1"
+              style={{ border: "1px solid rgba(184,134,11,0.15)", maxWidth: 520 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/screenshots/booking-desktop.png"
-                alt="דף הזמנה דסקטופ"
-                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
+                alt="דף הזמנה"
+                style={{ width: "100%", display: "block", objectFit: "cover", objectPosition: "top", height: 340 }}
               />
+            </div>
+            <div className="flex-1 text-right sm:max-w-xs">
+              <p
+                className="text-xs font-bold uppercase tracking-widest mb-3"
+                style={{ color: "#C9940A" }}
+              >
+                ככה הלקוחות שלך קובעים תור
+              </p>
+              <h2 className="text-2xl font-black mb-3" style={{ color: "#1C1A10" }}>
+                דף הזמנה מותאם לעסק שלך
+              </h2>
+              <p className="text-sm leading-relaxed" style={{ color: "#5A4E30" }}>
+                לוגו, שם העסק, שירותים ומחירים — הכל מוגדר על ידך. הלקוח רואה בדיוק את העסק שלך, לא תבנית גנרית.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       {/* ── SCREENSHOTS: ADMIN VIEW ── */}
-      <section className="py-12 px-4" style={{ background: "#f0fdf9" }}>
+      <section className="py-16 px-5" style={{ background: "#FFFBEF" }}>
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8">
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
-              ככה נראית המערכת שלך
-            </p>
-            <h2 className="text-2xl font-black text-gray-900">
-              לוח ניהול פשוט ונוח
-            </h2>
-            <p className="text-gray-500 text-sm mt-2">
-              ניהול שירותים, תורים, לקוחות ולוחות זמנים — מהמובייל
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-            <PhoneFrame
-              src="/screenshots/admin-services-mobile.png"
-              alt="ניהול שירותים מובייל"
-            />
-            <div
-              className="hidden sm:block rounded-2xl overflow-hidden shadow-2xl border border-gray-200"
-              style={{ width: 520, height: 340 }}
-            >
+          <div className="flex flex-col sm:flex-row-reverse items-center gap-10 sm:gap-14">
+            <div className="hidden sm:block rounded-2xl overflow-hidden shadow-xl flex-1"
+              style={{ border: "1px solid rgba(184,134,11,0.15)", maxWidth: 520 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/screenshots/admin-desktop.png"
-                alt="לוח ניהול דסקטופ"
-                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
+                alt="לוח ניהול"
+                style={{ width: "100%", display: "block", objectFit: "cover", objectPosition: "top", height: 340 }}
               />
+            </div>
+            <div className="flex-1 text-right sm:max-w-xs">
+              <p
+                className="text-xs font-bold uppercase tracking-widest mb-3"
+                style={{ color: "#C9940A" }}
+              >
+                ככה נראית המערכת שלך
+              </p>
+              <h2 className="text-2xl font-black mb-3" style={{ color: "#1C1A10" }}>
+                לוח ניהול פשוט ונוח
+              </h2>
+              <p className="text-sm leading-relaxed" style={{ color: "#5A4E30" }}>
+                ניהול שירותים, תורים, לקוחות ולוחות זמנים — מהמובייל, בכל מקום. אין צורך בהכשרה מיוחדת.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section className="py-12 px-4 bg-white">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-black text-gray-900 text-center mb-8">
-            מה כולל השירות?
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Feature
-              icon="🎨"
-              title="אתר מותאם"
-              desc="לוגו, צבעים ותמונות של העסק שלך"
-            />
-            <Feature
-              icon="📅"
-              title="תורים 24/7"
-              desc="הלקוחות קובעים בכל שעה, גם בלילה"
-            />
-            <Feature
-              icon="👥"
-              title="ניהול לקוחות"
-              desc="רשימה, אישורים והיסטוריה"
-            />
-            <Feature
-              icon="💳"
-              title="ביט ופייבוקס"
-              desc="הלקוחות משלמים ישירות אליך"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ── */}
-      <section className="py-12 px-4" style={{ background: "#f9fafb" }}>
+      {/* ── HOW IT WORKS (dark section) ── */}
+      <section className="py-16 px-5" style={{ background: "#1C1A10" }}>
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl font-black text-gray-900 text-center mb-10">
-            איך זה עובד?
+          <p
+            className="text-xs font-bold uppercase tracking-widest text-center mb-2"
+            style={{ color: "#C9940A" }}
+          >
+            שלושה שלבים
+          </p>
+          <h2 className="text-2xl font-black text-center mb-12" style={{ color: "#FFFBEF" }}>
+            מפנייה למערכת חיה — תוך יום
           </h2>
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-8">
             {[
               {
-                n: 1,
+                n: "01",
                 title: "שולחים פנייה",
-                desc: "ממלאים טופס קצר — שם העסק, קטגוריה וטלפון. תוך 24 שעות אנחנו חוזרים אליך",
+                desc: "ממלאים טופס קצר — שם העסק, קטגוריה וטלפון. תוך 24 שעות אנחנו חוזרים אליך.",
               },
               {
-                n: 2,
+                n: "02",
                 title: "מקבלים סיסמה ולינק",
-                desc: "נשלח לך לינק לדשבורד עם סיסמה ראשונית. מגדירים שירותים ושעות תוך 30 דקות",
+                desc: "נשלח לך לינק לדשבורד עם סיסמה ראשונית. מגדירים שירותים ושעות תוך 30 דקות.",
               },
               {
-                n: 3,
+                n: "03",
                 title: "מתחילים לקבל תורים",
-                desc: "שולחים את הלינק ללקוחות בוואטסאפ — והתורים מתחילים להיכנס",
+                desc: "שולחים את הלינק ללקוחות בוואטסאפ — והתורים מתחילים להיכנס.",
               },
             ].map(({ n, title, desc }) => (
-              <div key={n} className="flex gap-4 items-start">
+              <div key={n} className="flex gap-5 items-start">
                 <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-base shrink-0 mt-0.5"
-                  style={{ background: "#14b898" }}
+                  className="shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm"
+                  style={{ background: "rgba(240,192,64,0.12)", color: "#F0C040", border: "1px solid rgba(240,192,64,0.25)" }}
                 >
                   {n}
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">{title}</h3>
-                  <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{desc}</p>
+                <div className="text-right pt-1">
+                  <h3 className="font-bold mb-1" style={{ color: "#FFFBEF" }}>
+                    {title}
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: "#A89868" }}>
+                    {desc}
+                  </p>
                 </div>
               </div>
             ))}
@@ -430,43 +432,52 @@ export default function LandingPage() {
       </section>
 
       {/* ── PRICING ── */}
-      <section className="py-14 px-4 bg-white">
+      <section className="py-16 px-5" style={{ background: "#FFFFFF" }}>
         <div className="max-w-sm mx-auto">
-          <h2 className="text-2xl font-black text-gray-900 text-center mb-8">
+          <p
+            className="text-xs font-bold uppercase tracking-widest text-center mb-2"
+            style={{ color: "#C9940A" }}
+          >
             תמחור
+          </p>
+          <h2 className="text-2xl font-black text-center mb-8" style={{ color: "#1C1A10" }}>
+            מחיר שקוף. ללא הפתעות.
           </h2>
+
+          {/* Pricing card */}
           <div
-            className="rounded-3xl p-7 text-center shadow-xl border-2"
-            style={{ borderColor: "#14b898", background: "#f0fdf9" }}
+            className="rounded-3xl p-7 text-center"
+            style={{ background: "#1C1A10" }}
           >
             <div
-              className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-4 text-white"
-              style={{ background: "#14b898" }}
+              className="inline-block text-xs font-bold px-3 py-1.5 rounded-full mb-5"
+              style={{ background: "rgba(240,192,64,0.15)", color: "#F0C040" }}
             >
               מחיר השקה — קבוע לצמיתות
             </div>
 
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <span className="text-5xl font-black text-gray-900">
-                50 <span className="text-2xl">₪</span>
+            <div className="flex items-end justify-center gap-3 mb-1">
+              <span className="text-6xl font-black leading-none" style={{ color: "#F0C040" }}>
+                50
               </span>
-              <div className="text-right">
-                <div className="text-gray-400 line-through text-lg font-semibold">
-                  100 ₪
-                </div>
-                <div className="text-xs text-gray-400">מחיר רגיל</div>
+              <div className="pb-2 text-right">
+                <div className="text-2xl font-black leading-none" style={{ color: "#F0C040" }}>₪</div>
+                <div className="text-xs mt-1" style={{ color: "#8B7840" }}>לחודש</div>
+              </div>
+              <div className="pb-2 text-right">
+                <div className="text-base font-semibold line-through" style={{ color: "#5A4E30" }}>100 ₪</div>
+                <div className="text-xs" style={{ color: "#5A4E30" }}>מחיר רגיל</div>
               </div>
             </div>
-            <p className="text-sm text-gray-500 mb-1">לחודש</p>
 
             <div
               className="my-5 py-3 rounded-xl text-sm font-semibold"
-              style={{ background: "#ccf7ee", color: "#0d9479" }}
+              style={{ background: "rgba(240,192,64,0.1)", color: "#F0C040" }}
             >
-              🎁 חודש ראשון חינם · ללא התחייבות
+              חודש ראשון חינם · ללא התחייבות
             </div>
 
-            <ul className="text-sm text-right text-gray-700 space-y-2 mb-6">
+            <ul className="text-sm text-right space-y-2.5 mb-7">
               {[
                 "דף הזמנה מותאם לעסק",
                 "לוח ניהול מלא",
@@ -476,17 +487,17 @@ export default function LandingPage() {
                 "תמיכה ב-WhatsApp",
                 "מחיר קבוע לצמיתות לנרשמים עכשיו",
               ].map((f) => (
-                <li key={f} className="flex items-center gap-2">
-                  <span style={{ color: "#14b898" }}>✓</span>
-                  <span>{f}</span>
+                <li key={f} className="flex items-center gap-2.5">
+                  <span style={{ color: "#C9940A" }}>✓</span>
+                  <span style={{ color: "#D4B878" }}>{f}</span>
                 </li>
               ))}
             </ul>
 
             <button
               onClick={scrollToForm}
-              className="w-full py-4 rounded-2xl text-white font-bold text-base shadow-lg active:scale-95 transition-transform"
-              style={{ background: "#14b898" }}
+              className="w-full py-4 rounded-2xl font-bold text-base active:scale-95 transition-transform"
+              style={{ background: "#F0C040", color: "#1C1A10" }}
             >
               אני רוצה — השאר פרטים
             </button>
@@ -497,175 +508,211 @@ export default function LandingPage() {
       {/* ── REGISTRATION FORM ── */}
       <section
         ref={formRef}
-        className="py-14 px-4"
-        style={{ background: "#1a1a2e" }}
+        className="py-16 px-5"
+        style={{ background: "#FFFBEF" }}
       >
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-black text-white mb-2">
+            <p
+              className="text-xs font-bold uppercase tracking-widest mb-2"
+              style={{ color: "#C9940A" }}
+            >
               מתחילים?
+            </p>
+            <h2 className="text-2xl font-black mb-2" style={{ color: "#1C1A10" }}>
+              נשמח לשמוע ממך
             </h2>
-            <p className="text-gray-400 text-sm">
+            <p className="text-sm" style={{ color: "#5A4E30" }}>
               ממלאים פרטים, ותוך 24 שעות חוזרים אליך עם הפרטים להתחלה
             </p>
           </div>
 
           {submitted ? (
-            <div className="text-center py-10">
-              <div className="text-5xl mb-4">🎉</div>
-              <h3 className="text-xl font-bold text-white mb-2">הפנייה נשלחה!</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
+            <div
+              className="text-center py-10 rounded-3xl"
+              style={{ background: "#1C1A10" }}
+            >
+              <div className="text-4xl mb-4">✦</div>
+              <h3 className="text-xl font-bold mb-2" style={{ color: "#F0C040" }}>
+                הפנייה נשלחה!
+              </h3>
+              <p className="text-sm leading-relaxed" style={{ color: "#A89868" }}>
                 נפתח חלון וואטסאפ לשליחת ההודעה לטל.
                 <br />
                 אם לא נפתח —{" "}
                 <a
-                  href={`https://wa.me/972504558444`}
+                  href="https://wa.me/972504558444"
                   target="_blank"
                   rel="noreferrer"
-                  className="underline text-teal-400"
+                  style={{ color: "#F0C040" }}
+                  className="underline"
                 >
                   לחץ כאן
                 </a>
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div>
-                <label className="block text-sm text-gray-300 mb-1 text-right">
-                  שם העסק *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="למשל: סטודיו לאן, ספא הדר..."
-                  value={form.businessName}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, businessName: e.target.value }))
-                  }
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 text-white placeholder-gray-500 border border-white/20 focus:outline-none focus:border-teal-400 text-right"
-                />
-              </div>
+            <div
+              className="rounded-3xl p-7"
+              style={{ background: "#1C1A10" }}
+            >
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5 text-right" style={{ color: "#A89868" }}>
+                    שם העסק
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="למשל: סטודיו לאן, ספא הדר..."
+                    value={form.businessName}
+                    onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl text-right focus:outline-none transition-colors"
+                    style={{
+                      background: "rgba(255,251,239,0.07)",
+                      border: "1px solid rgba(240,192,64,0.2)",
+                      color: "#FFFBEF",
+                    }}
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm text-gray-300 mb-1 text-right">
-                  שמך *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="שם מלא"
-                  value={form.ownerName}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, ownerName: e.target.value }))
-                  }
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 text-white placeholder-gray-500 border border-white/20 focus:outline-none focus:border-teal-400 text-right"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5 text-right" style={{ color: "#A89868" }}>
+                    שמך
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="שם מלא"
+                    value={form.ownerName}
+                    onChange={(e) => setForm((f) => ({ ...f, ownerName: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl text-right focus:outline-none transition-colors"
+                    style={{
+                      background: "rgba(255,251,239,0.07)",
+                      border: "1px solid rgba(240,192,64,0.2)",
+                      color: "#FFFBEF",
+                    }}
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm text-gray-300 mb-1 text-right">
-                  טלפון *
-                </label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="05X-XXXXXXX"
-                  value={form.phone}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, phone: e.target.value }))
-                  }
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 text-white placeholder-gray-500 border border-white/20 focus:outline-none focus:border-teal-400 text-right"
-                  dir="ltr"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5 text-right" style={{ color: "#A89868" }}>
+                    טלפון
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="05X-XXXXXXX"
+                    value={form.phone}
+                    onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl focus:outline-none transition-colors"
+                    style={{
+                      background: "rgba(255,251,239,0.07)",
+                      border: "1px solid rgba(240,192,64,0.2)",
+                      color: "#FFFBEF",
+                      direction: "ltr",
+                      textAlign: "right",
+                    }}
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm text-gray-300 mb-1 text-right">
-                  סוג העסק *
-                </label>
-                <select
-                  required
-                  value={form.category}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, category: e.target.value }))
-                  }
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/20 focus:outline-none focus:border-teal-400 text-right"
-                  style={{ direction: "rtl" }}
-                >
-                  <option value="" disabled style={{ color: "#888" }}>
-                    בחר קטגוריה
-                  </option>
-                  {CATEGORIES.map((c) => (
-                    <option
-                      key={c.value}
-                      value={c.value}
-                      style={{ color: "#000", background: "#fff" }}
-                    >
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Terms checkbox */}
-              <label className="flex items-start gap-3 cursor-pointer mt-1">
-                <input
-                  type="checkbox"
-                  checked={form.termsAccepted}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, termsAccepted: e.target.checked }))
-                  }
-                  className="mt-0.5 w-4 h-4 rounded shrink-0 accent-teal-400"
-                />
-                <span className="text-sm text-gray-400 leading-relaxed text-right">
-                  קראתי ואישרתי את{" "}
-                  <button
-                    type="button"
-                    onClick={() => setShowTerms(true)}
-                    className="underline text-teal-400 hover:text-teal-300"
+                <div>
+                  <label className="block text-sm font-medium mb-1.5 text-right" style={{ color: "#A89868" }}>
+                    סוג העסק
+                  </label>
+                  <select
+                    required
+                    value={form.category}
+                    onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl focus:outline-none transition-colors"
+                    style={{
+                      background: "#252318",
+                      border: "1px solid rgba(240,192,64,0.2)",
+                      color: form.category ? "#FFFBEF" : "#6B5E2F",
+                      direction: "rtl",
+                    }}
                   >
-                    תנאי השימוש
-                  </button>
-                </span>
-              </label>
+                    <option value="" disabled style={{ color: "#6B5E2F" }}>
+                      בחר קטגוריה
+                    </option>
+                    {CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value} style={{ color: "#1C1A10", background: "#fff" }}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              {error && (
-                <p className="text-red-400 text-sm text-right">{error}</p>
-              )}
+                {/* Terms checkbox */}
+                <label className="flex items-start gap-3 cursor-pointer mt-1">
+                  <input
+                    type="checkbox"
+                    checked={form.termsAccepted}
+                    onChange={(e) => setForm((f) => ({ ...f, termsAccepted: e.target.checked }))}
+                    className="mt-0.5 w-4 h-4 rounded shrink-0"
+                    style={{ accentColor: "#F0C040" }}
+                  />
+                  <span className="text-sm leading-relaxed text-right" style={{ color: "#7A6940" }}>
+                    קראתי ואישרתי את{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowTerms(true)}
+                      className="underline hover:opacity-80 transition-opacity"
+                      style={{ color: "#C9940A" }}
+                    >
+                      תנאי השימוש
+                    </button>
+                  </span>
+                </label>
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-4 rounded-2xl text-white font-bold text-base mt-2 disabled:opacity-50 active:scale-95 transition-transform"
-                style={{ background: "#14b898" }}
-              >
-                {submitting ? "שולח..." : "שלח פנייה ופתח וואטסאפ"}
-              </button>
+                {error && (
+                  <p className="text-sm text-right" style={{ color: "#E87070" }}>
+                    {error}
+                  </p>
+                )}
 
-              <p className="text-xs text-gray-500 text-center">
-                לא מנוי — פנייה לקבלת מידע. אין חיוב אוטומטי.
-              </p>
-            </form>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-4 rounded-2xl font-bold text-base mt-1 disabled:opacity-50 active:scale-95 transition-transform"
+                  style={{ background: "#F0C040", color: "#1C1A10" }}
+                >
+                  {submitting ? "שולח..." : "שלח פנייה ופתח וואטסאפ"}
+                </button>
+
+                <p className="text-xs text-center" style={{ color: "#5A4E30" }}>
+                  לא מנוי — פנייה לקבלת מידע. אין חיוב אוטומטי.
+                </p>
+              </form>
+            </div>
           )}
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="py-8 px-4 bg-gray-900 text-center">
-        <p className="text-gray-500 text-sm">
-          יסמין תור · מערכת תורים לעסקים קטנים
-          <br />
+      <footer
+        className="py-8 px-5 text-center"
+        style={{ background: "#1C1A10", borderTop: "1px solid rgba(240,192,64,0.1)" }}
+      >
+        <p className="text-sm font-bold mb-1" style={{ color: "#F0C040" }}>
+          יסמין תור
+        </p>
+        <p className="text-xs" style={{ color: "#5A4E30" }}>
+          מערכת תורים לעסקים קטנים · יסמין תקשורת
+        </p>
+        <div className="mt-3 flex items-center justify-center gap-4 text-xs" style={{ color: "#7A6940" }}>
           <a
             href="https://wa.me/972504558444"
             target="_blank"
             rel="noreferrer"
-            className="text-teal-400 hover:underline"
+            className="hover:underline"
+            style={{ color: "#A89868" }}
           >
             050-455-8444
           </a>
-          {" · "}
-          <span>יסמין תקשורת</span>
-        </p>
+          <span>·</span>
+          <span>talsigronuzan@gmail.com</span>
+        </div>
       </footer>
     </div>
   );
