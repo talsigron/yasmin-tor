@@ -4,7 +4,9 @@
 // Uses the browser Notification API for admin alerts
 // when new appointments or customers are registered.
 
-const NOTIFICATION_PERMISSION_KEY = 'menta_notifications_enabled';
+function getKey(tenantId?: string): string {
+  return tenantId ? `${tenantId}_notifications_enabled` : 'notifications_enabled';
+}
 
 export function isNotificationSupported(): boolean {
   return typeof window !== 'undefined' && 'Notification' in window;
@@ -15,25 +17,25 @@ export function getNotificationPermission(): NotificationPermission | 'unsupport
   return Notification.permission;
 }
 
-export async function requestNotificationPermission(): Promise<boolean> {
+export async function requestNotificationPermission(tenantId?: string): Promise<boolean> {
   if (!isNotificationSupported()) return false;
   const result = await Notification.requestPermission();
   if (result === 'granted') {
-    localStorage.setItem(NOTIFICATION_PERMISSION_KEY, 'true');
+    localStorage.setItem(getKey(tenantId), 'true');
   }
   return result === 'granted';
 }
 
-export function isNotificationEnabled(): boolean {
+export function isNotificationEnabled(tenantId?: string): boolean {
   if (!isNotificationSupported()) return false;
   return (
     Notification.permission === 'granted' &&
-    localStorage.getItem(NOTIFICATION_PERMISSION_KEY) === 'true'
+    localStorage.getItem(getKey(tenantId)) === 'true'
   );
 }
 
-export function disableNotifications(): void {
-  localStorage.removeItem(NOTIFICATION_PERMISSION_KEY);
+export function disableNotifications(tenantId?: string): void {
+  localStorage.removeItem(getKey(tenantId));
 }
 
 export function sendNotification(

@@ -9,17 +9,23 @@ import {
 } from '@/lib/notifications';
 
 export function useRealtimeNotifications(enabled: boolean = true) {
-  const { supabase } = useTenant();
+  const { supabase, config } = useTenant();
+  const { businessId } = config;
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     if (!enabled || !isNotificationEnabled()) return;
 
     const channel = supabase
-      .channel('admin-notifications')
+      .channel(`admin-notifications-${businessId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'appointments' },
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'appointments',
+          filter: `business_id=eq.${businessId}`,
+        },
         (payload) => {
           const record = payload.new;
           if (record) {
@@ -33,7 +39,12 @@ export function useRealtimeNotifications(enabled: boolean = true) {
       )
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'customers' },
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'customers',
+          filter: `business_id=eq.${businessId}`,
+        },
         (payload) => {
           const record = payload.new;
           if (record) {
@@ -49,5 +60,5 @@ export function useRealtimeNotifications(enabled: boolean = true) {
       supabase.removeChannel(channel);
       channelRef.current = null;
     };
-  }, [enabled, supabase]);
+  }, [enabled, supabase, businessId]);
 }

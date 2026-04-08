@@ -51,21 +51,22 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [pendingCount, setPendingCount] = useState(0);
   const [notificationsOn, setNotificationsOn] = useState(false);
 
-  useEffect(() => { setNotificationsOn(isNotificationEnabled()); }, []);
+  const tenantId = config.id;
+  useEffect(() => { setNotificationsOn(isNotificationEnabled(tenantId)); }, [tenantId]);
   useRealtimeNotifications(notificationsOn);
 
   const toggleNotifications = useCallback(async () => {
     if (notificationsOn) {
-      disableNotifications();
+      disableNotifications(tenantId);
       setNotificationsOn(false);
     } else {
-      const granted = await requestNotificationPermission();
+      const granted = await requestNotificationPermission(tenantId);
       setNotificationsOn(granted);
       if (!granted && getNotificationPermission() === 'denied') {
         alert('ההתראות חסומות בדפדפן. יש לאפשר התראות בהגדרות הדפדפן');
       }
     }
-  }, [notificationsOn]);
+  }, [notificationsOn, tenantId]);
 
   useEffect(() => {
     const update = async () => {
