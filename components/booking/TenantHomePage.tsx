@@ -14,7 +14,7 @@ import Modal from '@/components/ui/Modal';
 import Link from 'next/link';
 import {
   Phone, Settings, Sparkles, LogOut, User,
-  MapPin, Navigation, Calendar, X,
+  MapPin, Navigation, Calendar, X, Share2, Check,
 } from 'lucide-react';
 import InstagramIcon from '@/components/icons/InstagramIcon';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
@@ -46,6 +46,7 @@ export default function TenantHomePage() {
   const [customer, setCustomer] = useState(() => getCurrentCustomer(tenantId));
   const [showLocationMenu, setShowLocationMenu] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const [myAppointments, setMyAppointments] = useState<Appointment[]>([]);
 
   const services = allServices.filter((s) => s.active);
@@ -113,6 +114,20 @@ export default function TenantHomePage() {
   const phoneNumber = profile.phone || '0500000000';
   const whatsappLink = `https://wa.me/972${phoneNumber.replace(/[-\s]/g, '').replace(/^0/, '')}`;
 
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = profile.name || 'קביעת תור';
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch { /* user cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }
+  };
+
   const brandPrimary = profile.brandColors?.primary || defaultColors.primary;
   const brandSecondary = profile.brandColors?.secondary || defaultColors.secondary;
   const brandBg = profile.brandColors?.background || defaultColors.background;
@@ -131,6 +146,15 @@ export default function TenantHomePage() {
             <span className="font-display text-lg tracking-wide" style={{ color: brandPrimary }}>{profile.name}</span>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={handleShare}
+              className="p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-90"
+              title="שתף את הדף"
+            >
+              {shareCopied
+                ? <Check size={18} className="text-green-500" />
+                : <Share2 size={18} className="text-gray-400" />}
+            </button>
             <Link href={`/${slug}/admin`} className="p-2.5 rounded-full hover:bg-gray-100 transition-all active:scale-90 ml-1" title="מערכת ניהול">
               <Settings size={18} className="text-gray-400" />
             </Link>
