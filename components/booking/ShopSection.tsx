@@ -27,14 +27,14 @@ export default function ShopSection({ brandPrimary }: { brandPrimary: string }) 
         <ShoppingBag size={18} style={{ color: brandPrimary }} />
         <h2 className="text-xl font-extrabold text-gray-800">חנות</h2>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {items.map(item => (
-          <div key={item.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm flex flex-col">
+          <div key={item.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm flex flex-col max-w-[160px]">
             {item.imageUrl ? (
-              <img src={item.imageUrl} alt={item.name} className="w-full h-36 object-cover" />
+              <img src={item.imageUrl} alt={item.name} className="w-full h-24 object-cover" />
             ) : (
-              <div className="w-full h-36 bg-gray-100 flex items-center justify-center">
-                <span className="text-3xl">🛍️</span>
+              <div className="w-full h-24 bg-gray-100 flex items-center justify-center">
+                <span className="text-2xl">🛍️</span>
               </div>
             )}
             <div className="p-3 flex-1 flex flex-col items-center text-center">
