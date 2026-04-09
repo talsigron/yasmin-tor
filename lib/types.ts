@@ -26,6 +26,7 @@ export interface Customer {
   id: string;
   fullName: string;
   phone: string;
+  email?: string | null;
   status: 'pending' | 'approved' | 'rejected';
   notificationEnabled: boolean;
   createdAt: string;
@@ -91,6 +92,7 @@ export interface BusinessProfile {
   ownerEmail?: string;
   ownerNotify?: NotificationPreferences;
   customerNotify?: NotificationPreferences;
+  healthDeclarationText?: string;
 }
 
 export interface NotificationPreferences {

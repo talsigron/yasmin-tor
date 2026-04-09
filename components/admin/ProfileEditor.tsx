@@ -536,8 +536,8 @@ export default function ProfileEditor() {
                     <label className="block text-sm font-medium text-gray-700">חובת הצהרת בריאות</label>
                     <p className="text-[10px] text-gray-500 mt-0.5">
                       {profile.requireHealthDeclaration
-                        ? 'כעת מתאמנים לא יכולים לקבוע אימון ללא הצהרת בריאות'
-                        : 'סמן אם ברצונך לא לאפשר למתאמנים לקבוע אימון ללא הצהרת בריאות'}
+                        ? 'לקוחות חייבים לאשר הצהרת בריאות לפני קביעת אימון'
+                        : 'הפעל כדי לחייב אישור הצהרת בריאות'}
                     </p>
                   </div>
                   <button
@@ -553,6 +553,11 @@ export default function ProfileEditor() {
                     )} />
                   </button>
                 </div>
+                {profile.requireHealthDeclaration && (
+                  <p className="text-[10px] text-gray-400 mt-2">
+                    הטקסט המוצג ללקוח הוא טקסט סטנדרטי של הצהרת בריאות לפעילות גופנית, עם שם העסק בכותרת.
+                  </p>
+                )}
               </div>
             )}
           </div>

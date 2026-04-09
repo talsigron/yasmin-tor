@@ -194,6 +194,7 @@ export async function fetchProfile(db: SupabaseClient, businessId: string): Prom
     ownerEmail: data.owner_email ?? undefined,
     ownerNotify: data.owner_notify ?? { email: true, sms: false, events: { new_customer: true, customer_booked: true, customer_cancelled: true, monthly_summary: false } },
     customerNotify: data.customer_notify ?? { email: true, sms: false, events: { booking_confirmed: true, cancel_confirmed: true, birthday_greeting: true } },
+    healthDeclarationText: data.health_declaration_text ?? undefined,
   };
 }
 
@@ -237,6 +238,7 @@ export async function updateProfileData(
   if (updates.ownerEmail !== undefined) row.owner_email = updates.ownerEmail || null;
   if (updates.ownerNotify !== undefined) row.owner_notify = updates.ownerNotify;
   if (updates.customerNotify !== undefined) row.customer_notify = updates.customerNotify;
+  if (updates.healthDeclarationText !== undefined) row.health_declaration_text = updates.healthDeclarationText || null;
 
   const { error } = await db
     .from('business_profiles')
@@ -298,6 +300,7 @@ function mapCustomerRow(row: Record<string, unknown>): Customer {
     id: row.id as string,
     fullName: (row.full_name as string) ?? '',
     phone: (row.phone as string) ?? '',
+    email: (row.email as string) ?? null,
     status: (row.status as Customer['status']) ?? 'pending',
     notificationEnabled: (row.notification_enabled as boolean) ?? false,
     createdAt: (row.created_at as string) ?? new Date().toISOString(),
@@ -310,6 +313,7 @@ function mapCustomerRow(row: Record<string, unknown>): Customer {
 }
 
 export interface CustomerExtendedFields {
+  email?: string | null;
   dateOfBirth?: string | null;
   idNumber?: string | null;
   gender?: 'male' | 'female' | 'other' | null;
@@ -337,6 +341,7 @@ export async function registerNewCustomer(
     const row = existing[0];
     const updates: Record<string, unknown> = {};
     if (notificationEnabled && !row.notification_enabled) updates.notification_enabled = true;
+    if (extended?.email) updates.email = extended.email;
     if (extended?.dateOfBirth) updates.date_of_birth = extended.dateOfBirth;
     if (extended?.idNumber) updates.id_number = extended.idNumber;
     if (extended?.gender) updates.gender = extended.gender;
@@ -356,6 +361,7 @@ export async function registerNewCustomer(
     status: autoApprove ? 'approved' : 'pending',
     notification_enabled: notificationEnabled,
   };
+  if (extended?.email) insertRow.email = extended.email;
   if (extended?.dateOfBirth) insertRow.date_of_birth = extended.dateOfBirth;
   if (extended?.idNumber) insertRow.id_number = extended.idNumber;
   if (extended?.gender) insertRow.gender = extended.gender;
@@ -436,6 +442,7 @@ export async function updateCustomerProfile(
   updates: CustomerExtendedFields
 ): Promise<void> {
   const row: Record<string, unknown> = {};
+  if (updates.email !== undefined) row.email = updates.email;
   if (updates.dateOfBirth !== undefined) row.date_of_birth = updates.dateOfBirth;
   if (updates.idNumber !== undefined) row.id_number = updates.idNumber;
   if (updates.gender !== undefined) row.gender = updates.gender;
@@ -1136,6 +1143,7 @@ export async function deleteTransaction(supabase: any, id: string): Promise<void
 export async function addCustomerManually(supabase: any, businessId: string, data: {
   fullName: string;
   phone: string;
+  email?: string;
   dateOfBirth?: string;
   gender?: string;
   idNumber?: string;
@@ -1144,6 +1152,7 @@ export async function addCustomerManually(supabase: any, businessId: string, dat
 }): Promise<Customer> {
   const { data: row, error } = await supabase.from('customers').insert({
     business_id: businessId, full_name: data.fullName, phone: data.phone,
+    email: data.email || null,
     status: 'approved', date_of_birth: data.dateOfBirth || null, gender: data.gender || null,
     id_number: data.idNumber || null, payment_method: data.paymentMethod || null,
     health_declaration_url: data.healthDeclarationSigned ? 'manually_signed' : null,
@@ -1151,7 +1160,7 @@ export async function addCustomerManually(supabase: any, businessId: string, dat
   }).select().single();
   if (error) throw error;
   return {
-    id: row.id, fullName: row.full_name, phone: row.phone, status: row.status,
+    id: row.id, fullName: row.full_name, phone: row.phone, email: row.email ?? null, status: row.status,
     notificationEnabled: row.notification_enabled, createdAt: row.created_at,
     dateOfBirth: row.date_of_birth, gender: row.gender,
     idNumber: row.id_number, paymentMethod: row.payment_method,

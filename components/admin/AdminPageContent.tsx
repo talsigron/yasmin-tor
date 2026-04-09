@@ -21,8 +21,17 @@ export default function AdminPageContent() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const session = typeof window !== 'undefined' && localStorage.getItem(sessionKey);
-    if (session === 'true') setLoggedIn(true);
+    if (typeof window !== 'undefined') {
+      // Super-admin bypass: if logged in to super-admin, skip password
+      const superAdminSession = localStorage.getItem('yasmin_super_admin_session');
+      if (superAdminSession === 'true') {
+        setLoggedIn(true);
+        setChecking(false);
+        return;
+      }
+      const session = localStorage.getItem(sessionKey);
+      if (session === 'true') setLoggedIn(true);
+    }
     setChecking(false);
   }, [sessionKey]);
 
