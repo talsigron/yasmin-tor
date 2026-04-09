@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Scissors, Clock, LogOut, Home, Settings, Users, Edit3, Bell, BellOff, CreditCard, ShoppingBag, Wallet } from 'lucide-react';
+import { Calendar, Scissors, Clock, LogOut, Home, Settings, Users, Edit3, Bell, BellOff, CreditCard, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchPendingCustomers } from '@/lib/supabase-store';
 import { useTenant } from '@/contexts/TenantContext';
@@ -17,7 +17,6 @@ import ScheduleManager from './ScheduleManager';
 import ProfileEditor from './ProfileEditor';
 import CustomersView from './CustomersView';
 import PunchCardsManager from './PunchCardsManager';
-import ShopManager from './ShopManager';
 import FinanceManager from './FinanceManager';
 import Link from 'next/link';
 import TenantHead from '@/components/TenantHead';
@@ -26,7 +25,7 @@ interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type Tab = 'appointments' | 'services' | 'schedule' | 'customers' | 'profile' | 'punch-cards' | 'shop' | 'finance';
+type Tab = 'appointments' | 'services' | 'schedule' | 'customers' | 'profile' | 'punch-cards' | 'finance';
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const { supabase, config } = useTenant();
@@ -41,7 +40,6 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     { key: 'customers', label: labels.customers, icon: Users },
     { key: 'punch-cards', label: 'כרטיסיות', icon: CreditCard },
     { key: 'finance', label: 'כספים', icon: Wallet },
-    { key: 'shop', label: 'חנות', icon: ShoppingBag },
     { key: 'profile', label: 'עריכה', icon: Edit3 },
   ];
 
@@ -125,7 +123,6 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         {activeTab === 'schedule' && <ScheduleManager />}
         {activeTab === 'customers' && <CustomersView />}
         {activeTab === 'punch-cards' && <PunchCardsManager />}
-        {activeTab === 'shop' && <ShopManager />}
         {activeTab === 'finance' && <FinanceManager />}
         {activeTab === 'profile' && <ProfileEditor />}
       </div>

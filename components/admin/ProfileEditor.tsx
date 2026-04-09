@@ -26,7 +26,9 @@ import {
   ChevronDown,
   CalendarClock,
   Megaphone,
+  ShoppingBag,
 } from 'lucide-react';
+import ShopManager from './ShopManager';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
@@ -590,6 +592,22 @@ export default function ProfileEditor() {
                 </div>
               </>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* Shop */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4">
+        <button onClick={() => toggleSection('shop')} className="w-full flex items-center justify-between py-2">
+          <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <ShoppingBag size={14} className="text-mint-500" />
+            חנות
+          </h3>
+          <ChevronDown size={16} className={cn('text-gray-400 transition-transform', openSections['shop'] && 'rotate-180')} />
+        </button>
+        {openSections['shop'] && (
+          <div className="pt-3">
+            <ShopManager />
           </div>
         )}
       </div>
