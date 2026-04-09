@@ -15,7 +15,7 @@ import {
   fetchPunchCardTypes,
 } from '@/lib/supabase-store';
 import { Transaction, Expense, MonthlyGoal, PAYMENT_METHOD_LABELS, PaymentMethods } from '@/lib/types';
-import { TrendingUp, TrendingDown, Target, Wallet, AlertCircle, Plus, Trash2, ChevronLeft, ChevronRight, BarChart3, Trophy } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Wallet, AlertCircle, Plus, Trash2, ChevronLeft, ChevronRight, BarChart3, Trophy, Sparkles } from 'lucide-react';
 
 type Tab = 'overview' | 'income' | 'expenses' | 'debts' | 'goals';
 
@@ -30,7 +30,9 @@ export default function FinanceManager() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [goals, setGoals] = useState<MonthlyGoal[]>([]);
   const [debts, setDebts] = useState<{ customerName: string; amount: number; cardName: string; customerId: string }[]>([]);
+  const [projectedIncome, setProjectedIncome] = useState<{ customerName: string; cardName: string; amount: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPicker, setShowPicker] = useState(false);
 
   // Selected month for viewing
   const now = new Date();
@@ -70,6 +72,38 @@ export default function FinanceManager() {
         })
         .filter(d => d.amount > 0);
       setDebts(debtList);
+
+      // Projected income: cards active during the viewed month, pro-rated across their validity
+      const monthStart = new Date(year, month - 1, 1);
+      const monthEnd = new Date(year, month, 0, 23, 59, 59);
+      const projection: { customerName: string; cardName: string; amount: number }[] = [];
+
+      cards.forEach(c => {
+        if (!c.isPaid) return; // only paid cards = guaranteed income
+        const type = types.find(t => t.id === c.punchCardTypeId);
+        const fullPrice = type?.price || 0;
+        if (fullPrice <= 0) return;
+
+        const purchasedAt = new Date(c.purchasedAt);
+        const expiresAt = c.expiresAt ? new Date(c.expiresAt) : null;
+        if (!expiresAt) return; // no validity = can't project
+
+        // Card must overlap with the viewed month
+        if (expiresAt < monthStart || purchasedAt > monthEnd) return;
+
+        // Calculate how many months the card spans
+        const totalMonths = Math.max(1,
+          (expiresAt.getFullYear() - purchasedAt.getFullYear()) * 12
+          + (expiresAt.getMonth() - purchasedAt.getMonth()) + 1);
+        const perMonth = fullPrice / totalMonths;
+
+        projection.push({
+          customerName: c.customerName || 'לקוח',
+          cardName: c.punchCardName,
+          amount: perMonth,
+        });
+      });
+      setProjectedIncome(projection);
     } catch (e) {
       console.error('Finance load error:', e);
     } finally {
@@ -161,6 +195,12 @@ export default function FinanceManager() {
 
   const monthName = new Date(year, month - 1).toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
 
+  // Check if viewing a future month (beyond current month)
+  const nowDate = new Date();
+  const isFutureMonth = year > nowDate.getFullYear() || (year === nowDate.getFullYear() && month > nowDate.getMonth() + 1);
+
+  const totalProjected = projectedIncome.reduce((s, p) => s + p.amount, 0);
+
   if (loading) {
     return <div className="p-8 text-center text-sm text-gray-500">טוען...</div>;
   }
@@ -168,14 +208,67 @@ export default function FinanceManager() {
   return (
     <div className="space-y-4">
       {/* Month selector */}
-      <div className="flex items-center justify-between bg-white rounded-xl border border-gray-100 p-3">
-        <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-50 active:scale-90 transition-all">
-          <ChevronRight size={18} />
-        </button>
-        <span className="font-bold text-gray-800">{monthName}</span>
-        <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-50 active:scale-90 transition-all">
-          <ChevronLeft size={18} />
-        </button>
+      <div className="relative">
+        <div className="flex items-center justify-between bg-white rounded-xl border border-gray-100 p-3">
+          <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-50 active:scale-90 transition-all">
+            <ChevronRight size={18} />
+          </button>
+          <button
+            onClick={() => setShowPicker(!showPicker)}
+            className="font-bold text-gray-800 px-4 py-1 rounded-lg hover:bg-gray-50 active:scale-95 transition-all"
+          >
+            {monthName}
+          </button>
+          <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-50 active:scale-90 transition-all">
+            <ChevronLeft size={18} />
+          </button>
+        </div>
+        {showPicker && (
+          <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-lg z-10 p-4">
+            {/* Year selector */}
+            <div className="flex items-center justify-between mb-3">
+              <button onClick={() => setYearState(year - 1)} className="p-2 rounded-lg hover:bg-gray-50">
+                <ChevronRight size={16} />
+              </button>
+              <span className="font-bold text-gray-800">{year}</span>
+              <button onClick={() => setYearState(year + 1)} className="p-2 rounded-lg hover:bg-gray-50">
+                <ChevronLeft size={16} />
+              </button>
+            </div>
+            {/* Month grid */}
+            <div className="grid grid-cols-3 gap-2">
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
+                const d = new Date(year, m - 1);
+                const label = d.toLocaleDateString('he-IL', { month: 'short' });
+                const isSelected = m === month;
+                return (
+                  <button
+                    key={m}
+                    onClick={() => { setMonthState(m); setShowPicker(false); }}
+                    className="py-2 rounded-lg text-xs font-medium transition-all"
+                    style={{
+                      backgroundColor: isSelected ? brandPrimary : '#F9FAFB',
+                      color: isSelected ? 'white' : '#374151',
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => {
+                const n = new Date();
+                setYearState(n.getFullYear());
+                setMonthState(n.getMonth() + 1);
+                setShowPicker(false);
+              }}
+              className="w-full mt-3 text-xs text-gray-500 hover:text-gray-700"
+            >
+              חזרה לחודש הנוכחי
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Sub-tabs */}
@@ -212,6 +305,34 @@ export default function FinanceManager() {
           </div>
 
           <MetricCard icon={<BarChart3 size={16} />} label="מחיר ממוצע ללקוח החודש" value={`₪${avgPricePerCustomer.toFixed(0)}`} color={brandPrimary} fullWidth />
+
+          {/* Projected income - only for future/current months */}
+          {projectedIncome.length > 0 && (
+            <div className="bg-white rounded-xl border border-purple-100 p-4">
+              <h3 className="text-sm font-bold text-gray-800 mb-1 flex items-center gap-2">
+                <Sparkles size={14} className="text-purple-500" />
+                הכנסות צפויות {isFutureMonth ? '(חודש עתידי)' : ''}
+              </h3>
+              <p className="text-[10px] text-gray-400 mb-3">
+                מבוסס על כרטיסיות ששולמו ותקופת התוקף שלהן
+              </p>
+              <div className="flex justify-between items-center py-2 border-b border-gray-50 mb-2">
+                <span className="text-xs text-gray-600">סה&quot;כ צפוי</span>
+                <span className="text-lg font-bold text-purple-600">₪{totalProjected.toFixed(0)}</span>
+              </div>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {projectedIncome.map((p, i) => (
+                  <div key={i} className="flex justify-between text-xs">
+                    <div className="min-w-0">
+                      <p className="text-gray-800 truncate">{p.customerName}</p>
+                      <p className="text-[10px] text-gray-400">{p.cardName}</p>
+                    </div>
+                    <span className="text-purple-600 font-bold shrink-0 mr-2">₪{p.amount.toFixed(0)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Payment method breakdown */}
           {paymentBreakdown.length > 0 && (
