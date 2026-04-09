@@ -190,6 +190,7 @@ export async function fetchProfile(db: SupabaseClient, businessId: string): Prom
     bannerDismissible: data.banner_dismissible ?? true,
     paymentMethods: data.payment_methods ?? { bit: true, cash: true },
     expenseCategories: data.expense_categories ?? ['שכירות', 'ציוד', 'חשבונות', 'שיווק', 'שכר', 'אחר'],
+    showParticipants: data.show_participants ?? false,
   };
 }
 
@@ -229,6 +230,7 @@ export async function updateProfileData(
   if (updates.bannerDismissible !== undefined) row.banner_dismissible = updates.bannerDismissible;
   if (updates.paymentMethods !== undefined) row.payment_methods = updates.paymentMethods;
   if (updates.expenseCategories !== undefined) row.expense_categories = updates.expenseCategories;
+  if (updates.showParticipants !== undefined) row.show_participants = updates.showParticipants;
 
   const { error } = await db
     .from('business_profiles')
@@ -847,6 +849,24 @@ export async function uploadImage(db: SupabaseClient, businessId: string, file: 
 
   const { data } = db.storage.from('images').getPublicUrl(path);
   return data.publicUrl;
+}
+
+// ─── Session Participants ─────────────────────────────────
+
+export async function fetchSessionParticipants(
+  db: SupabaseClient,
+  businessId: string,
+  date: string
+): Promise<{ time: string; customerName: string }[]> {
+  const { data, error } = await db
+    .from('appointments')
+    .select('time, customer_name')
+    .eq('business_id', businessId)
+    .eq('date', date)
+    .neq('status', 'cancelled')
+    .order('time', { ascending: true });
+  if (error) throw error;
+  return (data || []).map((r: any) => ({ time: r.time, customerName: r.customer_name || 'לקוח' }));
 }
 
 // ─── Available Slots ──────────────────────────────────────

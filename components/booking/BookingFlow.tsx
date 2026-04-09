@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Service, DayAvailability } from '@/lib/types';
 import { getCurrentCustomer, setCurrentCustomer } from '@/lib/store';
 import { useAvailability, useProfile } from '@/hooks/useSupabase';
-import { createAppointment, getAvailableSlotsAsync, checkCustomerStatus, fetchCustomerAppointments, fetchCustomerById, SlotInfo } from '@/lib/supabase-store';
+import { createAppointment, getAvailableSlotsAsync, checkCustomerStatus, fetchCustomerAppointments, fetchCustomerById, fetchSessionParticipants, SlotInfo } from '@/lib/supabase-store';
 import { formatDate, formatPrice, formatDuration, generateCalendarLink, cn } from '@/lib/utils';
 import { useTenant } from '@/contexts/TenantContext';
 import {
@@ -59,6 +59,7 @@ export default function BookingFlow({ service, onClose }: BookingFlowProps) {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [availableSlots, setAvailableSlots] = useState<SlotInfo[]>([]);
+  const [participants, setParticipants] = useState<{ time: string; customerName: string }[]>([]);
   const { profile: profileData } = useProfile();
   const maxDays = profileData?.maxBookingDays || 30;
   const { availability, loading: availabilityLoading } = useAvailability(maxDays === 0 ? 90 : maxDays);
@@ -85,8 +86,17 @@ export default function BookingFlow({ service, onClose }: BookingFlowProps) {
         .then((slots) => setAvailableSlots(slots))
         .catch(() => setAvailableSlots([]))
         .finally(() => setSlotsLoading(false));
+
+      // Fetch participants for this date (if enabled)
+      if (profileData?.showParticipants) {
+        fetchSessionParticipants(supabase, businessId, selectedDate)
+          .then(setParticipants)
+          .catch(() => setParticipants([]));
+      } else {
+        setParticipants([]);
+      }
     }
-  }, [selectedDate, service.duration, supabase, businessId, profileData?.minHoursBeforeBooking]);
+  }, [selectedDate, service.duration, supabase, businessId, profileData?.minHoursBeforeBooking, profileData?.showParticipants]);
 
   const handleConfirm = async () => {
     const customer = getCurrentCustomer(tenantId);
@@ -282,6 +292,26 @@ export default function BookingFlow({ service, onClose }: BookingFlowProps) {
                     </button>
                   ))}
                 </div>
+
+                {profileData?.showParticipants && participants.length > 0 && (
+                  <div className="mt-5 bg-gray-50 rounded-xl p-3">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">👥 משתתפים רשומים ביום זה</p>
+                    <div className="space-y-1">
+                      {Object.entries(
+                        participants.reduce<Record<string, string[]>>((acc, p) => {
+                          if (!acc[p.time]) acc[p.time] = [];
+                          acc[p.time].push(p.customerName);
+                          return acc;
+                        }, {})
+                      ).sort(([a], [b]) => a.localeCompare(b)).map(([time, names]) => (
+                        <div key={time} className="flex justify-between text-xs">
+                          <span className="font-bold text-gray-700">{time}</span>
+                          <span className="text-gray-500 text-left flex-1 mr-2">{names.join(', ')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

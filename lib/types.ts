@@ -87,6 +87,7 @@ export interface BusinessProfile {
   bannerDismissible?: boolean;
   paymentMethods?: PaymentMethods;
   expenseCategories?: string[];
+  showParticipants?: boolean; // show names of existing session attendees in booking flow
 }
 
 export interface PaymentMethods {
