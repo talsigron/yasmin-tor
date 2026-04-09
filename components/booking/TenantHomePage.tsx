@@ -20,6 +20,7 @@ import InstagramIcon from '@/components/icons/InstagramIcon';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import TenantHead from '@/components/TenantHead';
 import CustomerProfileModal from './CustomerProfileModal';
+import ShopSection from './ShopSection';
 
 const CACHE_KEY_PREFIX = 'profile_cache_';
 
@@ -385,6 +386,8 @@ export default function TenantHomePage() {
           )}
         </div>
       </section>
+
+      {profile.shopEnabled && <ShopSection brandPrimary={brandPrimary} />}
 
       {galleryImages.length > 0 && (
         <section className="max-w-3xl mx-auto px-5">

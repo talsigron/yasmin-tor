@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Scissors, Clock, LogOut, Home, Settings, Users, Edit3, Bell, BellOff } from 'lucide-react';
+import { Calendar, Scissors, Clock, LogOut, Home, Settings, Users, Edit3, Bell, BellOff, CreditCard, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchPendingCustomers } from '@/lib/supabase-store';
 import { useTenant } from '@/contexts/TenantContext';
@@ -15,6 +15,8 @@ import ServicesManager from './ServicesManager';
 import ScheduleManager from './ScheduleManager';
 import ProfileEditor from './ProfileEditor';
 import CustomersView from './CustomersView';
+import PunchCardsManager from './PunchCardsManager';
+import ShopManager from './ShopManager';
 import Link from 'next/link';
 import TenantHead from '@/components/TenantHead';
 
@@ -22,7 +24,7 @@ interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type Tab = 'appointments' | 'services' | 'schedule' | 'customers' | 'profile';
+type Tab = 'appointments' | 'services' | 'schedule' | 'customers' | 'profile' | 'punch-cards' | 'shop';
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const { supabase, config } = useTenant();
@@ -34,6 +36,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     { key: 'services', label: labels.services.replace('ה', ''), icon: Scissors },
     { key: 'schedule', label: 'לו"ז', icon: Clock },
     { key: 'customers', label: labels.customers, icon: Users },
+    { key: 'punch-cards', label: 'כרטיסיות', icon: CreditCard },
+    { key: 'shop', label: 'חנות', icon: ShoppingBag },
     { key: 'profile', label: 'עריכה', icon: Edit3 },
   ];
 
@@ -116,6 +120,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
         {activeTab === 'services' && <ServicesManager />}
         {activeTab === 'schedule' && <ScheduleManager />}
         {activeTab === 'customers' && <CustomersView />}
+        {activeTab === 'punch-cards' && <PunchCardsManager />}
+        {activeTab === 'shop' && <ShopManager />}
         {activeTab === 'profile' && <ProfileEditor />}
       </div>
 

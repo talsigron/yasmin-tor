@@ -6,6 +6,10 @@ import {
   TimeSlot,
   BusinessProfile,
   Customer,
+  PunchCardType,
+  CustomerPunchCard,
+  ShopItem,
+  Transaction,
 } from './types';
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -177,6 +181,8 @@ export async function fetchProfile(db: SupabaseClient, businessId: string): Prom
     minHoursBeforeBooking: data.min_hours_before_booking ?? null,
     requireHealthDeclaration: data.require_health_declaration ?? false,
     coverImage: data.cover_image ?? undefined,
+    cancellationHoursLimit: data.cancellation_hours_limit ?? 6,
+    shopEnabled: data.shop_enabled ?? false,
   };
 }
 
@@ -207,6 +213,8 @@ export async function updateProfileData(
   if (updates.minHoursBeforeBooking !== undefined) row.min_hours_before_booking = updates.minHoursBeforeBooking;
   if (updates.requireHealthDeclaration !== undefined) row.require_health_declaration = updates.requireHealthDeclaration;
   if (updates.coverImage !== undefined) row.cover_image = updates.coverImage;
+  if (updates.cancellationHoursLimit !== undefined) row.cancellation_hours_limit = updates.cancellationHoursLimit;
+  if (updates.shopEnabled !== undefined) row.shop_enabled = updates.shopEnabled;
 
   const { error } = await db
     .from('business_profiles')
@@ -914,4 +922,169 @@ export async function getAvailableSlotsAsync(
   });
 
   return slots;
+}
+
+// ==================== PUNCH CARD TYPES ====================
+
+export async function fetchPunchCardTypes(supabase: any, businessId: string): Promise<PunchCardType[]> {
+  const { data, error } = await supabase
+    .from('punch_card_types')
+    .select('*')
+    .eq('business_id', businessId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((r: any) => ({
+    id: r.id, businessId: r.business_id, name: r.name,
+    entriesCount: r.entries_count, price: r.price,
+    validityDays: r.validity_days, isActive: r.is_active, createdAt: r.created_at,
+  }));
+}
+
+export async function createPunchCardType(supabase: any, businessId: string, data: Omit<PunchCardType, 'id' | 'businessId' | 'createdAt'>): Promise<PunchCardType> {
+  const { data: row, error } = await supabase
+    .from('punch_card_types')
+    .insert({ business_id: businessId, name: data.name, entries_count: data.entriesCount, price: data.price, validity_days: data.validityDays, is_active: data.isActive })
+    .select().single();
+  if (error) throw error;
+  return { id: row.id, businessId: row.business_id, name: row.name, entriesCount: row.entries_count, price: row.price, validityDays: row.validity_days, isActive: row.is_active, createdAt: row.created_at };
+}
+
+export async function updatePunchCardType(supabase: any, id: string, data: Partial<PunchCardType>): Promise<void> {
+  const updates: any = {};
+  if (data.name !== undefined) updates.name = data.name;
+  if (data.entriesCount !== undefined) updates.entries_count = data.entriesCount;
+  if (data.price !== undefined) updates.price = data.price;
+  if (data.validityDays !== undefined) updates.validity_days = data.validityDays;
+  if (data.isActive !== undefined) updates.is_active = data.isActive;
+  const { error } = await supabase.from('punch_card_types').update(updates).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deletePunchCardType(supabase: any, id: string): Promise<void> {
+  const { error } = await supabase.from('punch_card_types').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ==================== CUSTOMER PUNCH CARDS ====================
+
+export async function fetchCustomerPunchCards(supabase: any, businessId: string, customerId?: string): Promise<CustomerPunchCard[]> {
+  let query = supabase.from('customer_punch_cards').select('*').eq('business_id', businessId);
+  if (customerId) query = query.eq('customer_id', customerId);
+  const { data, error } = await query.order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((r: any) => ({
+    id: r.id, businessId: r.business_id, customerId: r.customer_id, customerName: r.customer_name,
+    punchCardTypeId: r.punch_card_type_id, punchCardName: r.punch_card_name,
+    entriesTotal: r.entries_total, entriesUsed: r.entries_used,
+    purchasedAt: r.purchased_at, expiresAt: r.expires_at,
+    isPaid: r.is_paid, paymentMethod: r.payment_method, paidAt: r.paid_at,
+    notes: r.notes, createdAt: r.created_at,
+  }));
+}
+
+export async function createCustomerPunchCard(supabase: any, businessId: string, data: Omit<CustomerPunchCard, 'id' | 'businessId' | 'createdAt'>): Promise<CustomerPunchCard> {
+  const { data: row, error } = await supabase.from('customer_punch_cards').insert({
+    business_id: businessId, customer_id: data.customerId, customer_name: data.customerName,
+    punch_card_type_id: data.punchCardTypeId, punch_card_name: data.punchCardName,
+    entries_total: data.entriesTotal, entries_used: data.entriesUsed || 0,
+    expires_at: data.expiresAt, is_paid: data.isPaid || false,
+    payment_method: data.paymentMethod, notes: data.notes,
+  }).select().single();
+  if (error) throw error;
+  return { id: row.id, businessId: row.business_id, customerId: row.customer_id, customerName: row.customer_name, punchCardTypeId: row.punch_card_type_id, punchCardName: row.punch_card_name, entriesTotal: row.entries_total, entriesUsed: row.entries_used, purchasedAt: row.purchased_at, expiresAt: row.expires_at, isPaid: row.is_paid, paymentMethod: row.payment_method, paidAt: row.paid_at, notes: row.notes, createdAt: row.created_at };
+}
+
+export async function markPunchCardPaid(supabase: any, id: string, paymentMethod: string): Promise<void> {
+  const { error } = await supabase.from('customer_punch_cards').update({ is_paid: true, payment_method: paymentMethod, paid_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function usePunchCardEntry(supabase: any, id: string): Promise<void> {
+  const { data: card, error: fetchError } = await supabase.from('customer_punch_cards').select('entries_used').eq('id', id).single();
+  if (fetchError) throw fetchError;
+  const { error } = await supabase.from('customer_punch_cards').update({ entries_used: card.entries_used + 1 }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteCustomerPunchCard(supabase: any, id: string): Promise<void> {
+  const { error } = await supabase.from('customer_punch_cards').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ==================== SHOP ITEMS ====================
+
+export async function fetchShopItems(supabase: any, businessId: string): Promise<ShopItem[]> {
+  const { data, error } = await supabase.from('shop_items').select('*').eq('business_id', businessId).order('display_order', { ascending: true });
+  if (error) throw error;
+  return (data || []).map((r: any) => ({ id: r.id, businessId: r.business_id, name: r.name, description: r.description, price: r.price, isActive: r.is_active, displayOrder: r.display_order, createdAt: r.created_at }));
+}
+
+export async function createShopItem(supabase: any, businessId: string, data: Omit<ShopItem, 'id' | 'businessId' | 'createdAt'>): Promise<ShopItem> {
+  const { data: row, error } = await supabase.from('shop_items').insert({ business_id: businessId, name: data.name, description: data.description, price: data.price, is_active: data.isActive, display_order: data.displayOrder }).select().single();
+  if (error) throw error;
+  return { id: row.id, businessId: row.business_id, name: row.name, description: row.description, price: row.price, isActive: row.is_active, displayOrder: row.display_order, createdAt: row.created_at };
+}
+
+export async function updateShopItem(supabase: any, id: string, data: Partial<ShopItem>): Promise<void> {
+  const updates: any = {};
+  if (data.name !== undefined) updates.name = data.name;
+  if (data.description !== undefined) updates.description = data.description;
+  if (data.price !== undefined) updates.price = data.price;
+  if (data.isActive !== undefined) updates.is_active = data.isActive;
+  if (data.displayOrder !== undefined) updates.display_order = data.displayOrder;
+  const { error } = await supabase.from('shop_items').update(updates).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteShopItem(supabase: any, id: string): Promise<void> {
+  const { error } = await supabase.from('shop_items').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ==================== TRANSACTIONS ====================
+
+export async function fetchTransactions(supabase: any, businessId: string): Promise<Transaction[]> {
+  const { data, error } = await supabase.from('transactions').select('*').eq('business_id', businessId).order('transaction_date', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((r: any) => ({ id: r.id, businessId: r.business_id, customerId: r.customer_id, customerName: r.customer_name, description: r.description, amount: r.amount, paymentMethod: r.payment_method, transactionDate: r.transaction_date, referenceType: r.reference_type, referenceId: r.reference_id, createdAt: r.created_at }));
+}
+
+export async function createTransaction(supabase: any, businessId: string, data: Omit<Transaction, 'id' | 'businessId' | 'createdAt'>): Promise<Transaction> {
+  const { data: row, error } = await supabase.from('transactions').insert({ business_id: businessId, customer_id: data.customerId, customer_name: data.customerName, description: data.description, amount: data.amount, payment_method: data.paymentMethod, transaction_date: data.transactionDate || new Date().toISOString(), reference_type: data.referenceType, reference_id: data.referenceId }).select().single();
+  if (error) throw error;
+  return { id: row.id, businessId: row.business_id, customerId: row.customer_id, customerName: row.customer_name, description: row.description, amount: row.amount, paymentMethod: row.payment_method, transactionDate: row.transaction_date, referenceType: row.reference_type, referenceId: row.reference_id, createdAt: row.created_at };
+}
+
+export async function deleteTransaction(supabase: any, id: string): Promise<void> {
+  const { error } = await supabase.from('transactions').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ==================== MANUAL CUSTOMER ADD ====================
+
+export async function addCustomerManually(supabase: any, businessId: string, data: { fullName: string; phone: string; dateOfBirth?: string; gender?: string }): Promise<Customer> {
+  const { data: row, error } = await supabase.from('customers').insert({
+    business_id: businessId, full_name: data.fullName, phone: data.phone,
+    status: 'approved', date_of_birth: data.dateOfBirth, gender: data.gender,
+    notification_enabled: true,
+  }).select().single();
+  if (error) throw error;
+  return { id: row.id, fullName: row.full_name, phone: row.phone, status: row.status, notificationEnabled: row.notification_enabled, createdAt: row.created_at, dateOfBirth: row.date_of_birth, gender: row.gender };
+}
+
+// ==================== ALL APPOINTMENTS FOR CUSTOMER ====================
+
+export async function fetchAllCustomerAppointments(supabase: any, businessId: string, customerId: string): Promise<Appointment[]> {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('*')
+    .eq('business_id', businessId)
+    .eq('customer_id', customerId)
+    .order('date', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((r: any) => ({
+    id: r.id, customerId: r.customer_id, customerName: r.customer_name,
+    customerPhone: r.customer_phone, serviceId: r.service_id, serviceName: r.service_name,
+    date: r.date, time: r.time, duration: r.duration, status: r.status, createdAt: r.created_at,
+  }));
 }

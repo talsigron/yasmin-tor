@@ -18,10 +18,12 @@ import {
   UserCheck,
   UserX,
   Clock,
+  UserPlus,
 } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import { useTenant } from '@/contexts/TenantContext';
+import { addCustomerManually } from '@/lib/supabase-store';
 
 type CustomerTab = 'all' | 'pending';
 
@@ -46,8 +48,8 @@ function formatDob(dob: string): string {
 }
 
 export default function CustomersView() {
-  const { config } = useTenant();
-  const { labels, slug, category } = config;
+  const { supabase, config } = useTenant();
+  const { labels, slug, category, businessId } = config;
   const isFitness = category === 'fitness';
   const { customers, loading: custLoading, approve, reject } = useCustomers();
   const { appointments, loading: apptLoading } = useAppointments();
@@ -57,6 +59,9 @@ export default function CustomersView() {
   const [tab, setTab] = useState<CustomerTab>('all');
   const [approvalToast, setApprovalToast] = useState<ApprovalToast | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addForm, setAddForm] = useState({ fullName: '', phone: '', dateOfBirth: '', gender: '' });
+  const [addLoading, setAddLoading] = useState(false);
   const loading = custLoading || apptLoading;
 
   const pendingCount = customers.filter((c) => c.status === 'pending').length;
@@ -105,6 +110,20 @@ export default function CustomersView() {
     const d = new Date(c.createdAt);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
+
+  // Birthday today
+  const todayMonth = now.getMonth() + 1;
+  const todayDay = now.getDate();
+  const birthdayToday = approvedCustomers.filter((c) => {
+    if (!c.dateOfBirth) return false;
+    const parts = c.dateOfBirth.split('-');
+    return parseInt(parts[1]) === todayMonth && parseInt(parts[2]) === todayDay;
+  });
+
+  // Gender stats
+  const maleCount = approvedCustomers.filter(c => c.gender === 'male' || c.gender === 'זכר').length;
+  const femaleCount = approvedCustomers.filter(c => c.gender === 'female' || c.gender === 'נקבה').length;
+  const unknownGenderCount = approvedCustomers.filter(c => !c.gender).length;
 
   const [showStats, setShowStats] = useState(false);
   type DrilldownType = 'active' | 'new' | 'missing' | 'no_sub' | 'inactive' | 'inactive_week' | 'inactive_2weeks' | 'inactive_3weeks' | 'inactive_month' | 'top' | null;
@@ -289,6 +308,27 @@ export default function CustomersView() {
     }
   };
 
+  const handleAddCustomer = async () => {
+    if (!addForm.fullName || !addForm.phone) return;
+    setAddLoading(true);
+    try {
+      await addCustomerManually(supabase, businessId, {
+        fullName: addForm.fullName,
+        phone: addForm.phone,
+        dateOfBirth: addForm.dateOfBirth || undefined,
+        gender: addForm.gender || undefined,
+      });
+      setShowAddForm(false);
+      setAddForm({ fullName: '', phone: '', dateOfBirth: '', gender: '' });
+      // Refresh customers by triggering a re-render via window reload or hook refresh
+      window.location.reload();
+    } catch (err) {
+      console.error('Failed to add customer:', err);
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
   // Get appointment count per customer
   const getCustomerAppointments = (customerId: string) => {
     return appointments.filter((a) => a.customerId === customerId);
@@ -328,10 +368,112 @@ export default function CustomersView() {
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-gray-800">לקוחות</h2>
-        <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
-          {customers.length} לקוחות
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+            {customers.length} לקוחות
+          </span>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="flex items-center gap-1 px-3 py-1.5 bg-mint-500 text-white rounded-xl text-xs font-medium cursor-pointer hover:bg-mint-600 transition-colors"
+          >
+            <UserPlus size={13} /> הוסף לקוח
+          </button>
+        </div>
       </div>
+
+      {/* Birthday widget */}
+      {birthdayToday.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4 animate-fade-in">
+          <p className="text-xs font-bold text-yellow-800 mb-1.5">🎂 יום הולדת היום!</p>
+          {birthdayToday.map(c => (
+            <div key={c.id} className="flex items-center justify-between py-1">
+              <span className="text-sm font-medium text-gray-800">{c.fullName}</span>
+              <div className="flex gap-1">
+                <a href={`tel:${c.phone}`} className="w-7 h-7 rounded-full flex items-center justify-center bg-mint-50 text-mint-600">
+                  <Phone size={12} />
+                </a>
+                <a href={`https://wa.me/972${c.phone.replace(/^0/, '')}?text=${encodeURIComponent(`יום הולדת שמח ${c.fullName}! 🎂🎉`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="w-7 h-7 rounded-full flex items-center justify-center bg-green-50 text-green-600">
+                  <WhatsAppIcon size={12} />
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Gender stats */}
+      {isFitness && (maleCount > 0 || femaleCount > 0) && (
+        <div className="flex gap-2 mb-4">
+          <div className="flex-1 bg-blue-50 rounded-xl p-2.5 text-center">
+            <p className="text-lg font-bold text-blue-700">{maleCount}</p>
+            <p className="text-[10px] text-blue-600">זכרים</p>
+          </div>
+          <div className="flex-1 bg-pink-50 rounded-xl p-2.5 text-center">
+            <p className="text-lg font-bold text-pink-600">{femaleCount}</p>
+            <p className="text-[10px] text-pink-500">נקבות</p>
+          </div>
+          {unknownGenderCount > 0 && (
+            <div className="flex-1 bg-gray-50 rounded-xl p-2.5 text-center">
+              <p className="text-lg font-bold text-gray-600">{unknownGenderCount}</p>
+              <p className="text-[10px] text-gray-500">לא ידוע</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Manual add customer form */}
+      {showAddForm && (
+        <div className="bg-mint-50 border border-mint-200 rounded-xl p-4 mb-4 space-y-3 animate-fade-in">
+          <p className="text-xs font-bold text-mint-800">הוספת לקוח ידנית</p>
+          <input
+            value={addForm.fullName}
+            onChange={e => setAddForm(p => ({...p, fullName: e.target.value}))}
+            placeholder="שם מלא *"
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm"
+          />
+          <input
+            value={addForm.phone}
+            onChange={e => setAddForm(p => ({...p, phone: e.target.value}))}
+            placeholder="טלפון *"
+            type="tel"
+            dir="ltr"
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-left"
+          />
+          <input
+            value={addForm.dateOfBirth}
+            onChange={e => setAddForm(p => ({...p, dateOfBirth: e.target.value}))}
+            placeholder="תאריך לידה (YYYY-MM-DD)"
+            type="date"
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm"
+          />
+          <select
+            value={addForm.gender}
+            onChange={e => setAddForm(p => ({...p, gender: e.target.value}))}
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm"
+          >
+            <option value="">— מין (אופציונלי) —</option>
+            <option value="male">זכר</option>
+            <option value="female">נקבה</option>
+          </select>
+          <div className="flex gap-2">
+            <button
+              onClick={handleAddCustomer}
+              disabled={!addForm.fullName || !addForm.phone || addLoading}
+              className="flex-1 py-2 bg-mint-500 text-white rounded-xl text-sm font-medium cursor-pointer disabled:opacity-50"
+            >
+              {addLoading ? 'מוסיף...' : 'הוסף לקוח'}
+            </button>
+            <button
+              onClick={() => { setShowAddForm(false); setAddForm({ fullName: '', phone: '', dateOfBirth: '', gender: '' }); }}
+              className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium cursor-pointer"
+            >
+              ביטול
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Auto-approve toggle */}
       <div className="bg-gray-50 rounded-xl p-3 mb-4 flex items-center justify-between gap-3">

@@ -78,4 +78,60 @@ export interface BusinessProfile {
   minHoursBeforeBooking?: number | null; // null = no limit (0 means allow anytime)
   requireHealthDeclaration?: boolean; // fitness: block booking without health declaration
   coverImage?: string; // wide-angle photo of the place, shown as background
+  cancellationHoursLimit?: number;
+  shopEnabled?: boolean;
+}
+
+export interface PunchCardType {
+  id: string;
+  businessId: string;
+  name: string;
+  entriesCount: number;
+  price: number;
+  validityDays?: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CustomerPunchCard {
+  id: string;
+  businessId: string;
+  customerId: string;
+  customerName?: string;
+  punchCardTypeId?: string;
+  punchCardName: string;
+  entriesTotal: number;
+  entriesUsed: number;
+  purchasedAt: string;
+  expiresAt?: string;
+  isPaid: boolean;
+  paymentMethod?: string;
+  paidAt?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface ShopItem {
+  id: string;
+  businessId: string;
+  name: string;
+  description?: string;
+  price?: number;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+}
+
+export interface Transaction {
+  id: string;
+  businessId: string;
+  customerId?: string;
+  customerName?: string;
+  description: string;
+  amount: number;
+  paymentMethod: string;
+  transactionDate: string;
+  referenceType?: string;
+  referenceId?: string;
+  createdAt: string;
 }
