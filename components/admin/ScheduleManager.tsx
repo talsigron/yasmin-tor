@@ -293,7 +293,7 @@ export default function ScheduleManager() {
       </div>
 
       <p className="text-sm text-gray-500 mb-4">
-        לחצי על יום כדי לערוך שעות. השעות הקבועות מתמלאות אוטומטית 🪄
+        שינויים כאן חלים על תאריכים אלו בלבד. לשינוי השעות הקבועות — לחץ על &quot;שעות קבועות&quot; למעלה 🪄
       </p>
 
       <div className="space-y-2">
@@ -347,7 +347,7 @@ export default function ScheduleManager() {
                         ? day.slots
                             .map((s) => `${s.start} > ${s.end}`)
                             .join(' | ')
-                        : 'לא עובדת'}
+                        : 'לא פעיל'}
                     </span>
                   </div>
                 </div>
