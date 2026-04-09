@@ -18,6 +18,8 @@ export default function ShopManager() {
   const [form, setForm] = useState({ name: '', description: '', price: '', imageUrl: '' });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [togglingShop, setTogglingShop] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { load(); }, []);
@@ -31,6 +33,8 @@ export default function ShopManager() {
 
   async function save() {
     if (!form.name) return;
+    setSaving(true);
+    setSaveError('');
     try {
       const d = {
         name: form.name,
@@ -46,7 +50,12 @@ export default function ShopManager() {
       setEditingItem(null);
       setForm({ name: '', description: '', price: '', imageUrl: '' });
       load();
-    } catch (e) { console.error(e); }
+    } catch (e: any) {
+      console.error(e);
+      setSaveError(e?.message || 'שגיאה בשמירה');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleImageUpload(file: File) {
@@ -149,9 +158,14 @@ export default function ShopManager() {
             )}
           </div>
 
+          {saveError && <p className="text-xs text-red-500 text-center">{saveError}</p>}
           <div className="flex gap-2">
-            <button onClick={save} className="flex-1 py-2 bg-indigo-500 text-white rounded-xl text-sm font-medium cursor-pointer">שמור</button>
-            <button onClick={() => { setShowForm(false); setEditingItem(null); }} className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium cursor-pointer">ביטול</button>
+            <button onClick={save} disabled={saving}
+              className="flex-1 py-2 bg-indigo-500 text-white rounded-xl text-sm font-medium cursor-pointer disabled:opacity-60">
+              {saving ? 'שומר...' : 'שמור'}
+            </button>
+            <button onClick={() => { setShowForm(false); setEditingItem(null); setSaveError(''); }}
+              className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium cursor-pointer">ביטול</button>
           </div>
         </div>
       )}
