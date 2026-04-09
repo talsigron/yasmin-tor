@@ -190,9 +190,9 @@ export default function TenantHomePage() {
             <div className="absolute inset-0">
               <img src={profile.coverImage} alt="" className="w-full h-full object-cover" />
             </div>
-            <div className="absolute inset-0 bg-black/55" />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 60%, var(--brand-bg, #fff) 100%)' }} />
-            <div className="absolute top-0 left-0 right-0 h-20" style={{ background: 'linear-gradient(to bottom, var(--brand-bg, #fff) 0%, transparent 100%)' }} />
+            <div className="absolute inset-0 bg-black/40" />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.6) 85%, var(--brand-bg, #fff) 100%)' }} />
+            <div className="absolute top-0 left-0 right-0 h-16" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%)' }} />
           </>
         )}
         {!profile.coverImage && (
@@ -216,8 +216,8 @@ export default function TenantHomePage() {
             <h1
               className="font-display text-4xl md:text-6xl tracking-wide whitespace-nowrap mb-3"
               style={{
-                color: profile.coverImage ? '#fff' : brandPrimary,
-                textShadow: profile.coverImage ? `0 0 20px ${brandPrimary}80, 0 2px 10px rgba(0,0,0,0.5)` : 'none',
+                color: brandPrimary,
+                textShadow: profile.coverImage ? `0 0 25px ${brandPrimary}90, 0 0 50px ${brandPrimary}40, 0 2px 10px rgba(0,0,0,0.6)` : 'none',
               }}
             >
               {profile.name}
