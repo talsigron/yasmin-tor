@@ -107,6 +107,57 @@ export default function CustomersView() {
   }).length;
 
   const [showStats, setShowStats] = useState(false);
+  type DrilldownType = 'active' | 'new' | 'missing' | 'inactive_week' | 'inactive_2weeks' | 'inactive_3weeks' | 'inactive_month' | 'top' | null;
+  const [drilldown, setDrilldown] = useState<DrilldownType>(null);
+
+  // Pre-compute drill-down lists
+  const activeCustomers = approvedCustomers.filter((c) => {
+    const last = getLastApptDate(c.id);
+    return last && (now.getTime() - last.getTime()) < 30 * dayMs;
+  });
+  const newCustomers = customers.filter((c) => {
+    const d = new Date(c.createdAt);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const missingFieldsCustomers = isFitness
+    ? approvedCustomers.filter((c) => !c.idNumber || !c.dateOfBirth || !c.gender || !c.paymentMethod || !c.healthDeclarationUrl)
+    : [];
+  const inactiveByPeriod = (minDays: number, maxDays: number) =>
+    approvedCustomers.filter((c) => {
+      const last = getLastApptDate(c.id);
+      if (!last) return maxDays >= 30;
+      const diff = (now.getTime() - last.getTime()) / dayMs;
+      return diff > minDays && (maxDays >= 30 ? true : diff <= maxDays);
+    });
+  const topCustomers = approvedCustomers
+    .map((c) => ({ ...c, apptCount: getApptCount(c.id) }))
+    .filter((c) => c.apptCount > 0)
+    .sort((a, b) => b.apptCount - a.apptCount)
+    .slice(0, 10);
+
+  const getDrilldownCustomers = (): { list: Customer[]; title: string } => {
+    switch (drilldown) {
+      case 'active': return { list: activeCustomers, title: 'פעילים החודש' };
+      case 'new': return { list: newCustomers, title: 'חדשים החודש' };
+      case 'missing': return { list: missingFieldsCustomers, title: 'פרטים חסרים' };
+      case 'inactive_week': return { list: inactiveByPeriod(7, 14), title: 'לא פעילים — שבוע+' };
+      case 'inactive_2weeks': return { list: inactiveByPeriod(14, 21), title: 'לא פעילים — שבועיים+' };
+      case 'inactive_3weeks': return { list: inactiveByPeriod(21, 30), title: 'לא פעילים — 3 שבועות+' };
+      case 'inactive_month': return { list: inactiveByPeriod(30, 9999), title: 'לא פעילים — חודש+' };
+      case 'top': return { list: topCustomers, title: `לקוחות מובילים` };
+      default: return { list: [], title: '' };
+    }
+  };
+
+  const getMissingFieldsList = (c: Customer): string[] => {
+    const missing: string[] = [];
+    if (!c.idNumber) missing.push('תעודת זהות');
+    if (!c.dateOfBirth) missing.push('תאריך לידה');
+    if (!c.gender) missing.push('מין');
+    if (!c.paymentMethod) missing.push('אופן תשלום');
+    if (!c.healthDeclarationUrl) missing.push('הצהרת בריאות');
+    return missing;
+  };
 
   const displayCustomers = tab === 'pending'
     ? customers.filter((c) => c.status === 'pending')
@@ -244,7 +295,7 @@ export default function CustomersView() {
         </button>
         {showStats && (
           <div className="mt-2 space-y-2 animate-fade-in">
-            {/* Summary cards */}
+            {/* Summary cards — clickable */}
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-mint-50 rounded-xl p-3 text-center">
                 <p className="text-xl font-bold text-mint-700">{approvedCustomers.length}</p>
@@ -252,27 +303,29 @@ export default function CustomersView() {
                   <UserCheck size={10} /> לקוחות רשומים
                 </p>
               </div>
-              <div className="bg-blue-50 rounded-xl p-3 text-center">
+              <button onClick={() => setDrilldown(drilldown === 'active' ? null : 'active')}
+                className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2', drilldown === 'active' ? 'bg-blue-100 border-blue-300' : 'bg-blue-50 border-transparent')}>
                 <p className="text-xl font-bold text-blue-700">{activeThisMonth}</p>
                 <p className="text-[10px] text-blue-600 flex items-center justify-center gap-1 mt-0.5">
                   <Activity size={10} /> פעילים החודש
                 </p>
-              </div>
-              <div className="bg-purple-50 rounded-xl p-3 text-center">
+              </button>
+              <button onClick={() => setDrilldown(drilldown === 'new' ? null : 'new')}
+                className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2', drilldown === 'new' ? 'bg-purple-100 border-purple-300' : 'bg-purple-50 border-transparent')}>
                 <p className="text-xl font-bold text-purple-700">{newThisMonth}</p>
                 <p className="text-[10px] text-purple-600 flex items-center justify-center gap-1 mt-0.5">
                   <Users size={10} /> חדשים החודש
                 </p>
-              </div>
-              {isFitness && (
-                <div className="bg-amber-50 rounded-xl p-3 text-center">
+              </button>
+              {isFitness ? (
+                <button onClick={() => setDrilldown(drilldown === 'missing' ? null : 'missing')}
+                  className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2', drilldown === 'missing' ? 'bg-amber-100 border-amber-300' : 'bg-amber-50 border-transparent')}>
                   <p className="text-xl font-bold text-amber-700">{missingFieldsCount}</p>
                   <p className="text-[10px] text-amber-600 flex items-center justify-center gap-1 mt-0.5">
                     <AlertCircle size={10} /> פרטים חסרים
                   </p>
-                </div>
-              )}
-              {!isFitness && (
+                </button>
+              ) : (
                 <div className="bg-gray-50 rounded-xl p-3 text-center">
                   <p className="text-xl font-bold text-gray-700">{pendingCount}</p>
                   <p className="text-[10px] text-gray-600 flex items-center justify-center gap-1 mt-0.5">
@@ -282,67 +335,108 @@ export default function CustomersView() {
               )}
             </div>
 
-            {/* Inactive breakdown */}
+            {/* Inactive breakdown — clickable rows */}
             {(inactiveBreakdown.week + inactiveBreakdown.twoWeeks + inactiveBreakdown.threeWeeks + inactiveBreakdown.month) > 0 && (
               <div className="bg-white border border-gray-100 rounded-xl p-3">
                 <p className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1.5">
                   <UserX size={12} className="text-red-400" />
                   לקוחות לא פעילים
                 </p>
-                <div className="space-y-1.5">
-                  {inactiveBreakdown.week > 0 && (
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">שבוע+</span>
-                      <span className="font-medium text-amber-600">{inactiveBreakdown.week}</span>
-                    </div>
-                  )}
-                  {inactiveBreakdown.twoWeeks > 0 && (
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">שבועיים+</span>
-                      <span className="font-medium text-orange-600">{inactiveBreakdown.twoWeeks}</span>
-                    </div>
-                  )}
-                  {inactiveBreakdown.threeWeeks > 0 && (
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">3 שבועות+</span>
-                      <span className="font-medium text-red-500">{inactiveBreakdown.threeWeeks}</span>
-                    </div>
-                  )}
-                  {inactiveBreakdown.month > 0 && (
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-500">חודש+</span>
-                      <span className="font-medium text-red-700">{inactiveBreakdown.month}</span>
-                    </div>
-                  )}
+                <div className="space-y-1">
+                  {([
+                    { key: 'inactive_week' as DrilldownType, label: 'שבוע+', count: inactiveBreakdown.week, color: 'text-amber-600' },
+                    { key: 'inactive_2weeks' as DrilldownType, label: 'שבועיים+', count: inactiveBreakdown.twoWeeks, color: 'text-orange-600' },
+                    { key: 'inactive_3weeks' as DrilldownType, label: '3 שבועות+', count: inactiveBreakdown.threeWeeks, color: 'text-red-500' },
+                    { key: 'inactive_month' as DrilldownType, label: 'חודש+', count: inactiveBreakdown.month, color: 'text-red-700' },
+                  ]).filter((r) => r.count > 0).map((row) => (
+                    <button key={row.key} onClick={() => setDrilldown(drilldown === row.key ? null : row.key)}
+                      className={cn('w-full flex justify-between text-xs py-1.5 px-2 rounded-lg cursor-pointer transition-colors',
+                        drilldown === row.key ? 'bg-gray-100' : 'hover:bg-gray-50')}>
+                      <span className="text-gray-500">{row.label}</span>
+                      <span className={cn('font-medium', row.color)}>{row.count}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Top customers by appointments */}
-            {approvedCustomers.length > 0 && (
-              <div className="bg-white border border-gray-100 rounded-xl p-3">
+            {/* Top customers — clickable */}
+            {topCustomers.length > 0 && (
+              <button onClick={() => setDrilldown(drilldown === 'top' ? null : 'top')}
+                className={cn('w-full bg-white border rounded-xl p-3 text-right cursor-pointer transition-all',
+                  drilldown === 'top' ? 'border-mint-300 bg-mint-50/30' : 'border-gray-100')}>
                 <p className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1.5">
                   <Calendar size={12} className="text-mint-500" />
                   לקוחות מובילים (לפי {labels.bookings})
                 </p>
                 <div className="space-y-1.5">
-                  {approvedCustomers
-                    .map((c) => ({ ...c, apptCount: getApptCount(c.id) }))
-                    .filter((c) => c.apptCount > 0)
-                    .sort((a, b) => b.apptCount - a.apptCount)
-                    .slice(0, 5)
-                    .map((c, i) => (
-                      <div key={c.id} className="flex justify-between text-xs items-center">
-                        <span className="text-gray-700 flex items-center gap-1.5">
-                          <span className="w-4 h-4 rounded-full bg-mint-100 text-mint-700 text-[9px] font-bold flex items-center justify-center">{i + 1}</span>
-                          {c.fullName}
-                        </span>
-                        <span className="font-medium text-gray-600">{c.apptCount} {labels.bookings}</span>
-                      </div>
-                    ))}
+                  {topCustomers.slice(0, 5).map((c, i) => (
+                    <div key={c.id} className="flex justify-between text-xs items-center">
+                      <span className="text-gray-700 flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full bg-mint-100 text-mint-700 text-[9px] font-bold flex items-center justify-center">{i + 1}</span>
+                        {c.fullName}
+                      </span>
+                      <span className="font-medium text-gray-600">{c.apptCount} {labels.bookings}</span>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              </button>
             )}
+
+            {/* Drill-down panel */}
+            {drilldown && (() => {
+              const { list, title } = getDrilldownCustomers();
+              return (
+                <div className="bg-white border-2 border-mint-200 rounded-xl p-3 animate-fade-in">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-bold text-gray-700">{title} ({list.length})</p>
+                    <button onClick={() => setDrilldown(null)} className="p-1 rounded-full hover:bg-gray-100 cursor-pointer">
+                      <X size={14} className="text-gray-400" />
+                    </button>
+                  </div>
+                  {list.length === 0 ? (
+                    <p className="text-xs text-gray-400 text-center py-2">אין לקוחות</p>
+                  ) : (
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {list.map((c) => {
+                        const lastAppt = getLastAppointment(c.id);
+                        const apptCount = getApptCount(c.id);
+                        return (
+                          <div key={c.id} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-gray-800">{c.fullName}</p>
+                              <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                                <span dir="ltr">{c.phone}</span>
+                                <span>{apptCount} {labels.bookings}</span>
+                                {lastAppt && <span>אחרון: {formatDate(lastAppt.date)}</span>}
+                              </div>
+                              {drilldown === 'missing' && isFitness && (
+                                <div className="flex gap-1 mt-1 flex-wrap">
+                                  {getMissingFieldsList(c).map((f) => (
+                                    <span key={f} className="text-[9px] bg-red-50 text-red-500 px-1.5 py-0.5 rounded-full">{f}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()}
+                                className="w-7 h-7 rounded-full flex items-center justify-center bg-mint-50 text-mint-600">
+                                <Phone size={12} />
+                              </a>
+                              <a href={`https://wa.me/972${c.phone.replace(/^0/, '')}`} target="_blank" rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-7 h-7 rounded-full flex items-center justify-center bg-green-50 text-green-600">
+                                <WhatsAppIcon size={12} />
+                              </a>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
