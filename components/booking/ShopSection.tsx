@@ -10,12 +10,15 @@ export default function ShopSection({ brandPrimary }: { brandPrimary: string }) 
   const { supabase, config } = useTenant();
   const [items, setItems] = useState<ShopItem[]>([]);
 
+  const [error, setError] = useState('');
+
   useEffect(() => {
     fetchShopItems(supabase, config.businessId)
       .then(all => setItems(all.filter(i => i.isActive)))
-      .catch(() => {});
+      .catch((e) => { console.error('ShopSection fetch error:', e); setError(e?.message || 'שגיאה'); });
   }, []);
 
+  if (error) return <section className="max-w-3xl mx-auto px-5 mt-8"><p className="text-xs text-red-400">שגיאה בטעינת החנות: {error}</p></section>;
   if (items.length === 0) return null;
 
   return (
