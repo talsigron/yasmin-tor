@@ -6,33 +6,36 @@ import { X, Megaphone } from 'lucide-react';
 interface BannerMessageProps {
   message: string;
   endDate?: string;
+  endTime?: string; // HH:mm format
   dismissible?: boolean;
   brandPrimary: string;
   tenantId: string;
 }
 
-export default function BannerMessage({ message, endDate, dismissible = true, brandPrimary, tenantId }: BannerMessageProps) {
+export default function BannerMessage({ message, endDate, endTime, dismissible = true, brandPrimary, tenantId }: BannerMessageProps) {
   const [dismissed, setDismissed] = useState(false);
 
-  // Reset dismissed state when message changes
+  // Dismissal only lasts for the current session. When the customer revisits the site, the banner shows again (until expiry).
   const storageKey = `banner_dismissed_${tenantId}_${encodeURIComponent(message).slice(0, 40)}`;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (localStorage.getItem(storageKey) === '1') setDismissed(true);
+    if (sessionStorage.getItem(storageKey) === '1') setDismissed(true);
   }, [storageKey]);
 
-  // Check if banner expired
+  // Check if banner expired (uses both date and time if provided)
   if (endDate) {
-    const today = new Date().toISOString().split('T')[0];
-    if (today > endDate) return null;
+    const now = new Date();
+    const endIso = endTime ? `${endDate}T${endTime}:00` : `${endDate}T23:59:59`;
+    const end = new Date(endIso);
+    if (now > end) return null;
   }
 
   if (!message || dismissed) return null;
 
   const handleDismiss = () => {
     setDismissed(true);
-    try { localStorage.setItem(storageKey, '1'); } catch { /* ignore */ }
+    try { sessionStorage.setItem(storageKey, '1'); } catch { /* ignore */ }
   };
 
   return (

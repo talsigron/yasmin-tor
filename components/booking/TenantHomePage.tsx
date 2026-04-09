@@ -381,6 +381,7 @@ export default function TenantHomePage() {
         <BannerMessage
           message={profile.bannerMessage}
           endDate={profile.bannerEndDate}
+          endTime={profile.bannerEndTime}
           dismissible={profile.bannerDismissible !== false}
           brandPrimary={brandPrimary}
           tenantId={tenantId}

@@ -83,6 +83,7 @@ export interface BusinessProfile {
   bannerEnabled?: boolean;
   bannerMessage?: string;
   bannerEndDate?: string; // YYYY-MM-DD or undefined = until new message
+  bannerEndTime?: string; // HH:mm or undefined = end of day (23:59)
   bannerDismissible?: boolean;
   paymentMethods?: PaymentMethods;
   expenseCategories?: string[];

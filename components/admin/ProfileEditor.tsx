@@ -570,13 +570,22 @@ export default function ProfileEditor() {
                 </div>
                 <div>
                   <label className="text-xs text-gray-600 block mb-1">תאריך סיום (אופציונלי)</label>
-                  <input
-                    type="date"
-                    value={profile.bannerEndDate || ''}
-                    onChange={(e) => setProfile({ ...profile, bannerEndDate: e.target.value })}
-                    className="w-full text-sm border border-gray-200 rounded-lg p-2 focus:outline-none focus:border-mint-400"
-                  />
-                  <p className="text-[10px] text-gray-400 mt-1">אם ריק — ההודעה תוצג עד שתעדכן או תכבה אותה ידנית</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={profile.bannerEndDate || ''}
+                      onChange={(e) => setProfile({ ...profile, bannerEndDate: e.target.value })}
+                      className="flex-1 text-sm border border-gray-200 rounded-lg p-2 focus:outline-none focus:border-mint-400"
+                    />
+                    <input
+                      type="time"
+                      value={profile.bannerEndTime || ''}
+                      onChange={(e) => setProfile({ ...profile, bannerEndTime: e.target.value })}
+                      disabled={!profile.bannerEndDate}
+                      className="w-28 text-sm border border-gray-200 rounded-lg p-2 focus:outline-none focus:border-mint-400 disabled:bg-gray-50 disabled:text-gray-300"
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">אם ריק — ההודעה תוצג עד שתעדכן או תכבה אותה ידנית. אם יש תאריך ללא שעה — תסתיים בסוף היום</p>
                 </div>
                 <div className="flex items-center justify-between py-2 border-t border-gray-100">
                   <div>
