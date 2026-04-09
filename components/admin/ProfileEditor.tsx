@@ -428,8 +428,8 @@ export default function ProfileEditor() {
                     <label className="block text-sm font-medium text-gray-700">חובת הצהרת בריאות</label>
                     <p className="text-[10px] text-gray-500 mt-0.5">
                       {profile.requireHealthDeclaration
-                        ? 'מתאמן ללא הצהרת בריאות לא יוכל לקבוע אימון'
-                        : 'מתאמנים יכולים לקבוע אימון גם ללא הצהרת בריאות'}
+                        ? 'כעת מתאמנים לא יכולים לקבוע אימון ללא הצהרת בריאות'
+                        : 'סמן אם ברצונך לא לאפשר למתאמנים לקבוע אימון ללא הצהרת בריאות'}
                     </p>
                   </div>
                   <button
