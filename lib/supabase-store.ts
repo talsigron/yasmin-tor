@@ -187,6 +187,8 @@ export async function fetchProfile(db: SupabaseClient, businessId: string): Prom
     bannerMessage: data.banner_message ?? undefined,
     bannerEndDate: data.banner_end_date ?? undefined,
     bannerDismissible: data.banner_dismissible ?? true,
+    paymentMethods: data.payment_methods ?? { bit: true, cash: true },
+    expenseCategories: data.expense_categories ?? ['שכירות', 'ציוד', 'חשבונות', 'שיווק', 'שכר', 'אחר'],
   };
 }
 
@@ -223,6 +225,8 @@ export async function updateProfileData(
   if (updates.bannerMessage !== undefined) row.banner_message = updates.bannerMessage;
   if (updates.bannerEndDate !== undefined) row.banner_end_date = updates.bannerEndDate || null;
   if (updates.bannerDismissible !== undefined) row.banner_dismissible = updates.bannerDismissible;
+  if (updates.paymentMethods !== undefined) row.payment_methods = updates.paymentMethods;
+  if (updates.expenseCategories !== undefined) row.expense_categories = updates.expenseCategories;
 
   const { error } = await db
     .from('business_profiles')
@@ -1112,4 +1116,57 @@ export async function fetchAllCustomerAppointments(supabase: any, businessId: st
     customerPhone: r.customer_phone, serviceId: r.service_id, serviceName: r.service_name,
     date: r.date, time: r.time, duration: r.duration, status: r.status, createdAt: r.created_at,
   }));
+}
+
+// ─── Expenses ─────────────────────────────────────────────
+
+export async function fetchExpenses(supabase: any, businessId: string, fromDate?: string, toDate?: string): Promise<import('./types').Expense[]> {
+  let q = supabase.from('expenses').select('*').eq('business_id', businessId).order('date', { ascending: false });
+  if (fromDate) q = q.gte('date', fromDate);
+  if (toDate) q = q.lte('date', toDate);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data || []).map((r: any) => ({
+    id: r.id, businessId: r.business_id, date: r.date, amount: Number(r.amount),
+    category: r.category, note: r.note ?? undefined, createdAt: r.created_at,
+  }));
+}
+
+export async function createExpense(supabase: any, businessId: string, data: Omit<import('./types').Expense, 'id' | 'businessId' | 'createdAt'>): Promise<import('./types').Expense> {
+  const { data: row, error } = await supabase.from('expenses').insert({
+    business_id: businessId, date: data.date, amount: data.amount, category: data.category, note: data.note ?? null,
+  }).select().single();
+  if (error) throw error;
+  return {
+    id: row.id, businessId: row.business_id, date: row.date, amount: Number(row.amount),
+    category: row.category, note: row.note ?? undefined, createdAt: row.created_at,
+  };
+}
+
+export async function deleteExpense(supabase: any, id: string): Promise<void> {
+  const { error } = await supabase.from('expenses').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ─── Monthly Goals ────────────────────────────────────────
+
+export async function fetchMonthlyGoals(supabase: any, businessId: string, year: number, month: number): Promise<import('./types').MonthlyGoal[]> {
+  const { data, error } = await supabase.from('monthly_goals').select('*').eq('business_id', businessId).eq('year', year).eq('month', month);
+  if (error) throw error;
+  return (data || []).map((r: any) => ({
+    id: r.id, businessId: r.business_id, year: r.year, month: r.month,
+    kind: r.kind, targetValue: Number(r.target_value),
+  }));
+}
+
+export async function upsertMonthlyGoal(supabase: any, businessId: string, goal: Omit<import('./types').MonthlyGoal, 'id' | 'businessId'>): Promise<void> {
+  const { error } = await supabase.from('monthly_goals').upsert({
+    business_id: businessId, year: goal.year, month: goal.month, kind: goal.kind, target_value: goal.targetValue,
+  }, { onConflict: 'business_id,year,month,kind' });
+  if (error) throw error;
+}
+
+export async function deleteMonthlyGoal(supabase: any, id: string): Promise<void> {
+  const { error } = await supabase.from('monthly_goals').delete().eq('id', id);
+  if (error) throw error;
 }

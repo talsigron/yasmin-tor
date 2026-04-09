@@ -928,6 +928,34 @@ export default function ProfileEditor() {
                 </p>
               )}
             </div>
+
+            {/* Additional payment methods for finance tracking */}
+            <div className="pt-3 border-t border-gray-100">
+              <p className="text-[11px] text-gray-500 mb-2">אמצעי תשלום נוספים (לפילוח בטאב כספים):</p>
+              {([
+                { key: 'cash', label: 'מזומן' },
+                { key: 'credit', label: 'כרטיס אשראי' },
+                { key: 'checks', label: 'שיקים' },
+                { key: 'bank_transfer', label: 'העברה בנקאית' },
+              ] as const).map(({ key, label }) => (
+                <div key={key} className="flex items-center justify-between py-2">
+                  <span className="text-sm text-gray-700">{label}</span>
+                  <button
+                    onClick={() => setProfile({
+                      ...profile,
+                      paymentMethods: { ...(profile.paymentMethods || {}), [key]: !(profile.paymentMethods?.[key] ?? false) }
+                    })}
+                    className="cursor-pointer"
+                  >
+                    {profile.paymentMethods?.[key] ? (
+                      <ToggleRight size={28} className="text-mint-500" />
+                    ) : (
+                      <ToggleLeft size={28} className="text-gray-300" />
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

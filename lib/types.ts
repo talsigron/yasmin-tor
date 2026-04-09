@@ -84,6 +84,45 @@ export interface BusinessProfile {
   bannerMessage?: string;
   bannerEndDate?: string; // YYYY-MM-DD or undefined = until new message
   bannerDismissible?: boolean;
+  paymentMethods?: PaymentMethods;
+  expenseCategories?: string[];
+}
+
+export interface PaymentMethods {
+  bit?: boolean;
+  paybox?: boolean;
+  cash?: boolean;
+  credit?: boolean;
+  checks?: boolean;
+  bank_transfer?: boolean;
+}
+
+export const PAYMENT_METHOD_LABELS: Record<keyof PaymentMethods, string> = {
+  bit: 'ביט',
+  paybox: 'פייבוקס',
+  cash: 'מזומן',
+  credit: 'כרטיס אשראי',
+  checks: 'שיקים',
+  bank_transfer: 'העברה בנקאית',
+};
+
+export interface Expense {
+  id: string;
+  businessId: string;
+  date: string;
+  amount: number;
+  category: string;
+  note?: string;
+  createdAt: string;
+}
+
+export interface MonthlyGoal {
+  id: string;
+  businessId: string;
+  year: number;
+  month: number;
+  kind: 'income' | 'new_customers' | 'sessions';
+  targetValue: number;
 }
 
 export interface PunchCardType {
