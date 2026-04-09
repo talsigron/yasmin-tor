@@ -107,7 +107,7 @@ export default function CustomersView() {
   }).length;
 
   const [showStats, setShowStats] = useState(false);
-  type DrilldownType = 'active' | 'new' | 'missing' | 'no_sub' | 'inactive_week' | 'inactive_2weeks' | 'inactive_3weeks' | 'inactive_month' | 'top' | null;
+  type DrilldownType = 'active' | 'new' | 'missing' | 'no_sub' | 'inactive' | 'inactive_week' | 'inactive_2weeks' | 'inactive_3weeks' | 'inactive_month' | 'top' | null;
   const [drilldown, setDrilldown] = useState<DrilldownType>(null);
   const [tooltip, setTooltip] = useState<string | null>(null);
 
@@ -430,7 +430,7 @@ export default function CustomersView() {
               )}
               {(drilldown === 'new' || drilldown === 'missing') && renderDrilldown()}
 
-              {/* Row 3: Inactive + No subscription */}
+              {/* Row 3: No subscription + Inactive */}
               <button onClick={() => setDrilldown(drilldown === 'no_sub' ? null : 'no_sub')}
                 className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2 relative', drilldown === 'no_sub' ? 'bg-gray-200 border-gray-400' : 'bg-gray-100 border-transparent')}>
                 <div className="absolute top-2 left-2"><InfoTip id="no_sub" /></div>
@@ -439,44 +439,84 @@ export default function CustomersView() {
                   <UserX size={10} /> ללא מנוי פעיל
                 </p>
               </button>
-              <button onClick={() => setDrilldown(drilldown === 'top' ? null : 'top')}
-                className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2 relative', drilldown === 'top' ? 'bg-mint-100 border-mint-300' : 'bg-mint-50/50 border-transparent')}>
-                <p className="text-xl font-bold text-mint-700">{topCustomers.length}</p>
-                <p className="text-[10px] text-mint-600 flex items-center justify-center gap-1 mt-0.5">
-                  <Calendar size={10} /> לקוחות מובילים
+              <button onClick={() => setDrilldown(drilldown === 'inactive' ? null : 'inactive')}
+                className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2 relative',
+                  drilldown?.startsWith('inactive') ? 'bg-red-100 border-red-300' : 'bg-red-50 border-transparent')}>
+                <div className="absolute top-2 left-2"><InfoTip id="inactive" /></div>
+                <p className="text-xl font-bold text-red-700">
+                  {inactiveBreakdown.week + inactiveBreakdown.twoWeeks + inactiveBreakdown.threeWeeks + inactiveBreakdown.month}
+                </p>
+                <p className="text-[10px] text-red-600 flex items-center justify-center gap-1 mt-0.5">
+                  <UserX size={10} /> לא פעילים
                 </p>
               </button>
-              {(drilldown === 'no_sub' || drilldown === 'top') && renderDrilldown()}
-            </div>
-
-            {/* Inactive breakdown — full width below grid */}
-            {(inactiveBreakdown.week + inactiveBreakdown.twoWeeks + inactiveBreakdown.threeWeeks + inactiveBreakdown.month) > 0 && (
-              <div className="bg-white border border-gray-100 rounded-xl p-3 mt-2">
-                <p className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1.5">
-                  <UserX size={12} className="text-red-400" />
-                  לקוחות לא פעילים
-                  <span className="mr-1"><InfoTip id="inactive" /></span>
-                </p>
-                <div className="space-y-1">
-                  {([
-                    { key: 'inactive_week' as DrilldownType, label: 'שבוע+', count: inactiveBreakdown.week, color: 'text-amber-600' },
-                    { key: 'inactive_2weeks' as DrilldownType, label: 'שבועיים+', count: inactiveBreakdown.twoWeeks, color: 'text-orange-600' },
-                    { key: 'inactive_3weeks' as DrilldownType, label: '3 שבועות+', count: inactiveBreakdown.threeWeeks, color: 'text-red-500' },
-                    { key: 'inactive_month' as DrilldownType, label: 'חודש+', count: inactiveBreakdown.month, color: 'text-red-700' },
-                  ]).filter((r) => r.count > 0).map((row) => (
-                    <div key={row.key}>
-                      <button onClick={() => setDrilldown(drilldown === row.key ? null : row.key)}
-                        className={cn('w-full flex justify-between text-xs py-1.5 px-2 rounded-lg cursor-pointer transition-colors',
-                          drilldown === row.key ? 'bg-gray-100' : 'hover:bg-gray-50')}>
-                        <span className="text-gray-500">{row.label}</span>
-                        <span className={cn('font-medium', row.color)}>{row.count}</span>
+              {(drilldown === 'no_sub') && renderDrilldown()}
+              {/* Inactive expanded: period filters + customer list */}
+              {drilldown?.startsWith('inactive') && (
+                <div className="col-span-2 bg-white border-2 border-red-200 rounded-xl p-3 animate-fade-in">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-bold text-gray-700">לקוחות לא פעילים</p>
+                    <button onClick={() => setDrilldown(null)} className="p-1 rounded-full hover:bg-gray-100 cursor-pointer">
+                      <X size={14} className="text-gray-400" />
+                    </button>
+                  </div>
+                  {/* Period filter buttons */}
+                  <div className="flex gap-1.5 mb-3 flex-wrap">
+                    {([
+                      { key: 'inactive_week' as DrilldownType, label: 'שבוע+', count: inactiveBreakdown.week },
+                      { key: 'inactive_2weeks' as DrilldownType, label: 'שבועיים+', count: inactiveBreakdown.twoWeeks },
+                      { key: 'inactive_3weeks' as DrilldownType, label: '3 שבועות+', count: inactiveBreakdown.threeWeeks },
+                      { key: 'inactive_month' as DrilldownType, label: 'חודש+', count: inactiveBreakdown.month },
+                    ]).map((p) => (
+                      <button key={p.key}
+                        onClick={() => setDrilldown(drilldown === p.key ? 'inactive' : p.key)}
+                        className={cn('text-[10px] px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer font-medium',
+                          drilldown === p.key
+                            ? 'bg-red-100 border-red-300 text-red-700'
+                            : 'border-gray-200 text-gray-500 hover:border-gray-300')}>
+                        {p.label} ({p.count})
                       </button>
-                      {drilldown === row.key && renderDrilldown()}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  {/* Customer list for selected period */}
+                  {drilldown !== 'inactive' && (() => {
+                    const { list, title } = getDrilldownCustomers();
+                    const periodLabel = drilldown === 'inactive_week' ? 'שבוע' : drilldown === 'inactive_2weeks' ? 'שבועיים' : drilldown === 'inactive_3weeks' ? '3 שבועות' : 'חודש';
+                    return list.length === 0 ? (
+                      <p className="text-xs text-gray-400 text-center py-2">אין לקוחות בתקופה זו</p>
+                    ) : (
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {list.map((c) => {
+                          const lastAppt = getLastAppointment(c.id);
+                          const waText = encodeURIComponent(`היי ${c.fullName}! ראיתי שלא היית מעל ${periodLabel} באימון. מה קורה? 💪`);
+                          const waLink = `https://wa.me/972${c.phone.replace(/^0/, '')}?text=${waText}`;
+                          return (
+                            <div key={c.id} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-gray-800">{c.fullName}</p>
+                                <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                                  <span dir="ltr">{c.phone}</span>
+                                  {lastAppt && <span>אחרון: {formatDate(lastAppt.date)}</span>}
+                                </div>
+                              </div>
+                              <div className="flex gap-1 shrink-0">
+                                <a href={waLink} target="_blank" rel="noopener noreferrer"
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-green-50 text-green-700 text-[10px] font-medium hover:bg-green-100 transition-colors">
+                                  <WhatsAppIcon size={12} /> שלח הודעה
+                                </a>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                  {drilldown === 'inactive' && (
+                    <p className="text-xs text-gray-400 text-center py-2">בחר תקופה למעלה לראות לקוחות</p>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>
