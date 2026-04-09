@@ -37,7 +37,7 @@ export default function ShopSection({ brandPrimary }: { brandPrimary: string }) 
                 <span className="text-3xl">🛍️</span>
               </div>
             )}
-            <div className="p-3 flex-1 flex flex-col">
+            <div className="p-3 flex-1 flex flex-col items-center text-center">
               <p className="font-semibold text-gray-800 text-sm">{item.name}</p>
               {item.description && <p className="text-xs text-gray-500 mt-0.5 flex-1">{item.description}</p>}
               {item.price !== undefined && item.price !== null && (
