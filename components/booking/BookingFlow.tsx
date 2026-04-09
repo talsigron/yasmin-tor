@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import { Service, DayAvailability } from '@/lib/types';
 import { getCurrentCustomer, setCurrentCustomer } from '@/lib/store';
 import { useAvailability, useProfile } from '@/hooks/useSupabase';
-import { createAppointment, getAvailableSlotsAsync, checkCustomerStatus, fetchCustomerAppointments, SlotInfo } from '@/lib/supabase-store';
+import { createAppointment, getAvailableSlotsAsync, checkCustomerStatus, fetchCustomerAppointments, fetchCustomerById, SlotInfo } from '@/lib/supabase-store';
 import { formatDate, formatPrice, formatDuration, generateCalendarLink, cn } from '@/lib/utils';
 import { useTenant } from '@/contexts/TenantContext';
 import {
   Calendar, Clock, ChevronRight, Check, CalendarPlus,
-  Sparkles, MessageCircle, Hourglass,
+  Sparkles, MessageCircle, Hourglass, AlertCircle,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import RegisterForm from './RegisterForm';
@@ -32,10 +32,18 @@ export default function BookingFlow({ service, onClose }: BookingFlowProps) {
   useEffect(() => {
     const customer = getCurrentCustomer(tenantId);
     if (!customer) { setStep('register'); return; }
-    checkCustomerStatus(supabase, businessId, customer.phone).then((serverStatus) => {
+    checkCustomerStatus(supabase, businessId, customer.phone).then(async (serverStatus) => {
       if (serverStatus === 'approved') {
         const updated = { ...customer, status: 'approved' as const };
         setCurrentCustomer(tenantId, updated);
+        // Check health declaration requirement for fitness
+        if (config.category === 'fitness' && profileData?.requireHealthDeclaration) {
+          const fresh = await fetchCustomerById(supabase, businessId, customer.id);
+          if (fresh && !fresh.healthDeclarationUrl) {
+            setHealthDeclBlocked(true);
+            return;
+          }
+        }
         setStep('date');
       } else if (serverStatus === 'pending') {
         setStep('register');
@@ -58,6 +66,7 @@ export default function BookingFlow({ service, onClose }: BookingFlowProps) {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [doubleBookError, setDoubleBookError] = useState(false);
   const [bookingLimitReached, setBookingLimitReached] = useState(false);
+  const [healthDeclBlocked, setHealthDeclBlocked] = useState(false);
 
   useEffect(() => {
     const maxActive = profileData?.maxActiveBookings ?? 1;
@@ -184,7 +193,18 @@ export default function BookingFlow({ service, onClose }: BookingFlowProps) {
           return <div className="animate-fade-in"><RegisterForm onComplete={() => setStep('date')} /></div>;
         })()}
 
-        {step === 'date' && bookingLimitReached ? (
+        {healthDeclBlocked ? (
+          <div className="text-center py-8 animate-fade-in">
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle size={28} className="text-red-500" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">חסרה הצהרת בריאות</h3>
+            <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto mb-4">
+              בעל העסק דורש הצהרת בריאות לפני קביעת אימון. השלם את הפרופיל שלך ונסה שוב.
+            </p>
+            <Button variant="primary" onClick={onClose}>חזרה</Button>
+          </div>
+        ) : step === 'date' && bookingLimitReached ? (
           <div className="text-center py-8 animate-fade-in">
             <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
               <Calendar size={28} className="text-amber-500" />

@@ -76,4 +76,5 @@ export interface BusinessProfile {
   maxActiveBookings?: number; // 1, 2, 3, 4, or 0 (unlimited)
   autoApprove?: boolean | null; // null = use static config default
   minHoursBeforeBooking?: number | null; // null = no limit (0 means allow anytime)
+  requireHealthDeclaration?: boolean; // fitness: block booking without health declaration
 }
