@@ -1016,13 +1016,13 @@ export async function deleteCustomerPunchCard(supabase: any, id: string): Promis
 export async function fetchShopItems(supabase: any, businessId: string): Promise<ShopItem[]> {
   const { data, error } = await supabase.from('shop_items').select('*').eq('business_id', businessId).order('display_order', { ascending: true });
   if (error) throw error;
-  return (data || []).map((r: any) => ({ id: r.id, businessId: r.business_id, name: r.name, description: r.description, price: r.price, isActive: r.is_active, displayOrder: r.display_order, createdAt: r.created_at }));
+  return (data || []).map((r: any) => ({ id: r.id, businessId: r.business_id, name: r.name, description: r.description, price: r.price, imageUrl: r.image_url ?? undefined, isActive: r.is_active, displayOrder: r.display_order, createdAt: r.created_at }));
 }
 
 export async function createShopItem(supabase: any, businessId: string, data: Omit<ShopItem, 'id' | 'businessId' | 'createdAt'>): Promise<ShopItem> {
-  const { data: row, error } = await supabase.from('shop_items').insert({ business_id: businessId, name: data.name, description: data.description, price: data.price, is_active: data.isActive, display_order: data.displayOrder }).select().single();
+  const { data: row, error } = await supabase.from('shop_items').insert({ business_id: businessId, name: data.name, description: data.description, price: data.price, image_url: data.imageUrl ?? null, is_active: data.isActive, display_order: data.displayOrder }).select().single();
   if (error) throw error;
-  return { id: row.id, businessId: row.business_id, name: row.name, description: row.description, price: row.price, isActive: row.is_active, displayOrder: row.display_order, createdAt: row.created_at };
+  return { id: row.id, businessId: row.business_id, name: row.name, description: row.description, price: row.price, imageUrl: row.image_url ?? undefined, isActive: row.is_active, displayOrder: row.display_order, createdAt: row.created_at };
 }
 
 export async function updateShopItem(supabase: any, id: string, data: Partial<ShopItem>): Promise<void> {
@@ -1030,6 +1030,7 @@ export async function updateShopItem(supabase: any, id: string, data: Partial<Sh
   if (data.name !== undefined) updates.name = data.name;
   if (data.description !== undefined) updates.description = data.description;
   if (data.price !== undefined) updates.price = data.price;
+  if (data.imageUrl !== undefined) updates.image_url = data.imageUrl;
   if (data.isActive !== undefined) updates.is_active = data.isActive;
   if (data.displayOrder !== undefined) updates.display_order = data.displayOrder;
   const { error } = await supabase.from('shop_items').update(updates).eq('id', id);
@@ -1062,14 +1063,30 @@ export async function deleteTransaction(supabase: any, id: string): Promise<void
 
 // ==================== MANUAL CUSTOMER ADD ====================
 
-export async function addCustomerManually(supabase: any, businessId: string, data: { fullName: string; phone: string; dateOfBirth?: string; gender?: string }): Promise<Customer> {
+export async function addCustomerManually(supabase: any, businessId: string, data: {
+  fullName: string;
+  phone: string;
+  dateOfBirth?: string;
+  gender?: string;
+  idNumber?: string;
+  paymentMethod?: string;
+  healthDeclarationSigned?: boolean;
+}): Promise<Customer> {
   const { data: row, error } = await supabase.from('customers').insert({
     business_id: businessId, full_name: data.fullName, phone: data.phone,
-    status: 'approved', date_of_birth: data.dateOfBirth, gender: data.gender,
+    status: 'approved', date_of_birth: data.dateOfBirth || null, gender: data.gender || null,
+    id_number: data.idNumber || null, payment_method: data.paymentMethod || null,
+    health_declaration_url: data.healthDeclarationSigned ? 'manually_signed' : null,
     notification_enabled: true,
   }).select().single();
   if (error) throw error;
-  return { id: row.id, fullName: row.full_name, phone: row.phone, status: row.status, notificationEnabled: row.notification_enabled, createdAt: row.created_at, dateOfBirth: row.date_of_birth, gender: row.gender };
+  return {
+    id: row.id, fullName: row.full_name, phone: row.phone, status: row.status,
+    notificationEnabled: row.notification_enabled, createdAt: row.created_at,
+    dateOfBirth: row.date_of_birth, gender: row.gender,
+    idNumber: row.id_number, paymentMethod: row.payment_method,
+    healthDeclarationUrl: row.health_declaration_url,
+  };
 }
 
 // ==================== ALL APPOINTMENTS FOR CUSTOMER ====================

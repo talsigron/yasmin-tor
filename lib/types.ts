@@ -117,6 +117,7 @@ export interface ShopItem {
   name: string;
   description?: string;
   price?: number;
+  imageUrl?: string; // requires: ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS image_url TEXT;
   isActive: boolean;
   displayOrder: number;
   createdAt: string;

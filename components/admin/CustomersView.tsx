@@ -60,7 +60,7 @@ export default function CustomersView() {
   const [approvalToast, setApprovalToast] = useState<ApprovalToast | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [addForm, setAddForm] = useState({ fullName: '', phone: '', dateOfBirth: '', gender: '' });
+  const [addForm, setAddForm] = useState({ fullName: '', phone: '', dateOfBirth: '', gender: '', idNumber: '', paymentMethod: '', healthDeclarationSigned: false });
   const [addLoading, setAddLoading] = useState(false);
   const loading = custLoading || apptLoading;
 
@@ -317,10 +317,12 @@ export default function CustomersView() {
         phone: addForm.phone,
         dateOfBirth: addForm.dateOfBirth || undefined,
         gender: addForm.gender || undefined,
+        idNumber: addForm.idNumber || undefined,
+        paymentMethod: addForm.paymentMethod || undefined,
+        healthDeclarationSigned: addForm.healthDeclarationSigned,
       });
       setShowAddForm(false);
-      setAddForm({ fullName: '', phone: '', dateOfBirth: '', gender: '' });
-      // Refresh customers by triggering a re-render via window reload or hook refresh
+      setAddForm({ fullName: '', phone: '', dateOfBirth: '', gender: '', idNumber: '', paymentMethod: '', healthDeclarationSigned: false });
       window.location.reload();
     } catch (err) {
       console.error('Failed to add customer:', err);
@@ -404,7 +406,7 @@ export default function CustomersView() {
       )}
 
       {/* Gender stats */}
-      {isFitness && (maleCount > 0 || femaleCount > 0) && (
+      {isFitness && (
         <div className="flex gap-2 mb-4">
           <div className="flex-1 bg-blue-50 rounded-xl p-2.5 text-center">
             <p className="text-lg font-bold text-blue-700">{maleCount}</p>
@@ -414,12 +416,10 @@ export default function CustomersView() {
             <p className="text-lg font-bold text-pink-600">{femaleCount}</p>
             <p className="text-[10px] text-pink-500">נקבות</p>
           </div>
-          {unknownGenderCount > 0 && (
-            <div className="flex-1 bg-gray-50 rounded-xl p-2.5 text-center">
-              <p className="text-lg font-bold text-gray-600">{unknownGenderCount}</p>
-              <p className="text-[10px] text-gray-500">לא ידוע</p>
-            </div>
-          )}
+          <div className="flex-1 bg-gray-50 rounded-xl p-2.5 text-center">
+            <p className="text-lg font-bold text-gray-600">{unknownGenderCount}</p>
+            <p className="text-[10px] text-gray-500">לא מוגדר</p>
+          </div>
         </div>
       )}
 
@@ -441,13 +441,17 @@ export default function CustomersView() {
             dir="ltr"
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-left"
           />
-          <input
-            value={addForm.dateOfBirth}
-            onChange={e => setAddForm(p => ({...p, dateOfBirth: e.target.value}))}
-            placeholder="תאריך לידה (YYYY-MM-DD)"
-            type="date"
-            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm"
-          />
+          <div className="relative">
+            <input
+              value={addForm.dateOfBirth}
+              onChange={e => setAddForm(p => ({...p, dateOfBirth: e.target.value}))}
+              type="text"
+              onFocus={e => { e.currentTarget.type = 'date'; }}
+              onBlur={e => { if (!e.currentTarget.value) e.currentTarget.type = 'text'; }}
+              placeholder="תאריך לידה DD/MM/YYYY"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm"
+            />
+          </div>
           <select
             value={addForm.gender}
             onChange={e => setAddForm(p => ({...p, gender: e.target.value}))}
@@ -457,6 +461,32 @@ export default function CustomersView() {
             <option value="male">זכר</option>
             <option value="female">נקבה</option>
           </select>
+          <input
+            value={addForm.idNumber}
+            onChange={e => setAddForm(p => ({...p, idNumber: e.target.value}))}
+            placeholder="מספר ת.ז (אופציונלי)"
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm"
+            dir="ltr"
+          />
+          <select
+            value={addForm.paymentMethod}
+            onChange={e => setAddForm(p => ({...p, paymentMethod: e.target.value}))}
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm"
+          >
+            <option value="">— אמצעי תשלום (אופציונלי) —</option>
+            <option value="cash">מזומן</option>
+            <option value="bit">ביט</option>
+            <option value="paybox">פייבוקס</option>
+          </select>
+          <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
+            <input
+              type="checkbox"
+              checked={addForm.healthDeclarationSigned}
+              onChange={e => setAddForm(p => ({...p, healthDeclarationSigned: e.target.checked}))}
+              className="w-4 h-4 rounded"
+            />
+            חתם/ה על הצהרת בריאות
+          </label>
           <div className="flex gap-2">
             <button
               onClick={handleAddCustomer}
@@ -466,7 +496,7 @@ export default function CustomersView() {
               {addLoading ? 'מוסיף...' : 'הוסף לקוח'}
             </button>
             <button
-              onClick={() => { setShowAddForm(false); setAddForm({ fullName: '', phone: '', dateOfBirth: '', gender: '' }); }}
+              onClick={() => { setShowAddForm(false); setAddForm({ fullName: '', phone: '', dateOfBirth: '', gender: '', idNumber: '', paymentMethod: '', healthDeclarationSigned: false }); }}
               className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium cursor-pointer"
             >
               ביטול

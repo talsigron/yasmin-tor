@@ -22,7 +22,7 @@ export default function ShopSection({ brandPrimary }: { brandPrimary: string }) 
     <section className="max-w-3xl mx-auto px-5 mt-8">
       <div className="flex items-center gap-2 mb-4">
         <ShoppingBag size={18} style={{ color: brandPrimary }} />
-        <h2 className="text-xl font-extrabold text-gray-800">תפריט</h2>
+        <h2 className="text-xl font-extrabold text-gray-800">חנות</h2>
       </div>
       <div className="space-y-2">
         {items.map(item => (

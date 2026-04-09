@@ -387,8 +387,6 @@ export default function TenantHomePage() {
         </div>
       </section>
 
-      {profile.shopEnabled && <ShopSection brandPrimary={brandPrimary} />}
-
       {galleryImages.length > 0 && (
         <section className="max-w-3xl mx-auto px-5">
           <Gallery images={galleryImages.map((img) => img.url)} />
@@ -412,6 +410,8 @@ export default function TenantHomePage() {
           ))}
         </div>
       </section>
+
+      {profile.shopEnabled && <ShopSection brandPrimary={brandPrimary} />}
 
       <footer className="mt-16 border-t border-gray-100">
         <div className="max-w-3xl mx-auto px-5 py-8 text-center">

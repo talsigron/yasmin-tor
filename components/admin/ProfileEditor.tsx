@@ -500,29 +500,6 @@ export default function ProfileEditor() {
               </p>
             </div>
 
-            <div className="border-t border-gray-100 pt-4 mt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">הצג תפריט מחירים/חנות בדף הבית</label>
-                  <p className="text-[10px] text-gray-500 mt-0.5">
-                    {profile.shopEnabled
-                      ? 'התפריט יוצג בדף הבית מתחת לשירותים'
-                      : 'הפעל כדי להציג פריטי חנות/תפריט בדף הבית'}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setProfile({ ...profile, shopEnabled: !profile.shopEnabled })}
-                  className="cursor-pointer"
-                >
-                  {profile.shopEnabled ? (
-                    <ToggleRight size={32} className="text-mint-500" />
-                  ) : (
-                    <ToggleLeft size={32} className="text-gray-300" />
-                  )}
-                </button>
-              </div>
-            </div>
-
             {config.category === 'fitness' && (
               <div className="border-t border-gray-100 pt-4 mt-4">
                 <div className="flex items-center justify-between">

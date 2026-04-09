@@ -31,6 +31,7 @@ export default function PunchCardsManager() {
 
   const [showPayModal, setShowPayModal] = useState<string | null>(null);
   const [payMethod, setPayMethod] = useState<string>('מזומן');
+  const [payAmount, setPayAmount] = useState<string>('');
 
   useEffect(() => { loadAll(); }, []);
 
@@ -93,16 +94,24 @@ export default function PunchCardsManager() {
     const card = customerCards.find(c => c.id === cardId);
     if (!card) return;
     const type = cardTypes.find(t => t.id === card.punchCardTypeId);
+    const fullPrice = type?.price || 0;
+    const amount = payAmount ? Number(payAmount) : fullPrice;
+    const isFullPayment = amount >= fullPrice;
     try {
-      await markPunchCardPaid(supabase, cardId, payMethod);
+      if (isFullPayment) {
+        await markPunchCardPaid(supabase, cardId, payMethod);
+      }
       await createTransaction(supabase, businessId, {
         customerId: card.customerId, customerName: card.customerName,
-        description: `תשלום עבור ${card.punchCardName}`,
-        amount: type?.price || 0, paymentMethod: payMethod,
+        description: isFullPayment
+          ? `תשלום עבור ${card.punchCardName}`
+          : `תשלום חלקי (₪${amount} מתוך ₪${fullPrice}) עבור ${card.punchCardName}`,
+        amount, paymentMethod: payMethod,
         transactionDate: new Date().toISOString(),
         referenceType: 'punch_card', referenceId: cardId,
       });
       setShowPayModal(null);
+      setPayAmount('');
       loadAll();
     } catch (e) { console.error(e); }
   }
@@ -232,9 +241,15 @@ export default function PunchCardsManager() {
                     <span className="text-xs text-gray-400">{card.expiresAt ? `עד ${formatDate(card.expiresAt)}` : 'ללא תוקף'}</span>
                     <div className="flex gap-1">
                       {!card.isPaid && (
-                        <button onClick={() => { setShowPayModal(card.id); setPayMethod('מזומן'); }}
+                        <button onClick={() => { setShowPayModal(card.id); setPayMethod('מזומן'); setPayAmount(''); }}
                           className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-xs cursor-pointer hover:bg-red-100">
                           <CheckCircle size={11} /> גבה
+                        </button>
+                      )}
+                      {card.isPaid && (
+                        <button onClick={() => { setShowPayModal(card.id); setPayMethod('מזומן'); setPayAmount(''); }}
+                          className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs cursor-pointer hover:bg-indigo-100">
+                          <CheckCircle size={11} /> תשלום נוסף
                         </button>
                       )}
                       {card.entriesUsed < card.entriesTotal && (
@@ -331,23 +346,61 @@ export default function PunchCardsManager() {
       )}
 
       {/* Pay modal */}
-      {showPayModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center p-4" onClick={() => setShowPayModal(null)}>
-          <div className="bg-white rounded-2xl p-5 w-full max-w-xs" onClick={e => e.stopPropagation()}>
-            <p className="font-bold text-gray-800 mb-4 text-center">אמצעי תשלום</p>
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {PAYMENT_METHODS.map(m => (
-                <button key={m} onClick={() => setPayMethod(m)}
-                  className={`py-2.5 rounded-xl text-sm font-medium cursor-pointer ${payMethod === m ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-700'}`}>{m}</button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => handleMarkPaid(showPayModal)} className="flex-1 py-2.5 bg-green-500 text-white rounded-xl text-sm font-bold cursor-pointer">אשר תשלום</button>
-              <button onClick={() => setShowPayModal(null)} className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm cursor-pointer">ביטול</button>
+      {showPayModal && (() => {
+        const modalCard = customerCards.find(c => c.id === showPayModal);
+        const modalType = cardTypes.find(t => t.id === modalCard?.punchCardTypeId);
+        const fullPrice = modalType?.price || 0;
+        const enteredAmount = payAmount ? Number(payAmount) : fullPrice;
+        const remaining = fullPrice - enteredAmount;
+        const isPartial = payAmount !== '' && enteredAmount < fullPrice;
+        return (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center p-4" onClick={() => { setShowPayModal(null); setPayAmount(''); }}>
+            <div className="bg-white rounded-2xl p-5 w-full max-w-xs" onClick={e => e.stopPropagation()}>
+              <p className="font-bold text-gray-800 mb-1 text-center">גביית תשלום</p>
+              {modalCard && <p className="text-xs text-gray-500 text-center mb-4">{modalCard.customerName} — {modalCard.punchCardName}</p>}
+
+              {/* Amount field */}
+              <div className="mb-3">
+                <label className="text-xs text-gray-600 mb-1 block">סכום לגביה</label>
+                <div className="relative">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₪</span>
+                  <input
+                    type="number"
+                    value={payAmount}
+                    onChange={e => setPayAmount(e.target.value)}
+                    placeholder={String(fullPrice)}
+                    className="w-full pr-8 pl-3 py-2.5 rounded-xl border border-gray-200 text-sm text-right"
+                    dir="ltr"
+                  />
+                </div>
+                {isPartial && remaining > 0 && (
+                  <p className="text-xs text-orange-600 mt-1.5 bg-orange-50 rounded-lg px-2 py-1">
+                    נשאר לתשלום: ₪{remaining} — הכרטיסייה לא תסומן כשולמה
+                  </p>
+                )}
+                {!isPartial && fullPrice > 0 && (
+                  <p className="text-xs text-green-600 mt-1.5">מחיר מלא: ₪{fullPrice}</p>
+                )}
+              </div>
+
+              <p className="text-xs text-gray-600 mb-2">אמצעי תשלום</p>
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {PAYMENT_METHODS.map(m => (
+                  <button key={m} onClick={() => setPayMethod(m)}
+                    className={`py-2.5 rounded-xl text-sm font-medium cursor-pointer ${payMethod === m ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-700'}`}>{m}</button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => handleMarkPaid(showPayModal)}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer text-white ${isPartial ? 'bg-orange-500' : 'bg-green-500'}`}>
+                  {isPartial ? 'רשום תשלום חלקי' : 'אשר תשלום'}
+                </button>
+                <button onClick={() => { setShowPayModal(null); setPayAmount(''); }} className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm cursor-pointer">ביטול</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
