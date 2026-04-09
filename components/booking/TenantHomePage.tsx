@@ -182,19 +182,20 @@ export default function TenantHomePage() {
         </div>
       </nav>
 
-      {/* Hero with optional cover image */}
-      <header className="relative overflow-hidden">
-        {/* Cover image background */}
+      {/* Cover image wrapper — extends from hero through social icons */}
+      <div className="relative">
         {profile.coverImage && (
           <>
             <div className="absolute inset-0">
               <img src={profile.coverImage} alt="" className="w-full h-full object-cover" />
             </div>
-            <div className="absolute inset-0 bg-black/40" />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.6) 85%, var(--brand-bg, #fff) 100%)' }} />
-            <div className="absolute top-0 left-0 right-0 h-16" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%)' }} />
+            <div className="absolute inset-0 bg-black/30" />
+            <div className="absolute bottom-0 left-0 right-0 h-40" style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 50%, var(--brand-bg, #fff) 100%)' }} />
+            <div className="absolute top-0 left-0 right-0 h-12" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, transparent 100%)' }} />
           </>
         )}
+
+      <header className="relative overflow-hidden">
         {!profile.coverImage && (
           <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${brandSecondary}, ${brandSecondary}4D, transparent)` }} />
         )}
@@ -213,14 +214,19 @@ export default function TenantHomePage() {
                 />
               </div>
             )}
-            <h1
-              className="font-display text-4xl md:text-6xl tracking-wide whitespace-nowrap mb-3"
-              style={{
-                color: brandPrimary,
-                textShadow: profile.coverImage ? `0 0 25px ${brandPrimary}90, 0 0 50px ${brandPrimary}40, 0 2px 10px rgba(0,0,0,0.6)` : 'none',
-              }}
-            >
-              {profile.name}
+            <h1 className="text-4xl md:text-6xl tracking-wide whitespace-nowrap mb-3 font-bold">
+              {profile.coverImage ? (
+                <span className="inline-block px-4 py-1 rounded-xl" style={{
+                  backgroundColor: `${brandPrimary}dd`,
+                  color: '#fff',
+                  textShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  boxShadow: `0 0 30px ${brandPrimary}50`,
+                }}>
+                  {profile.name}
+                </span>
+              ) : (
+                <span style={{ color: brandPrimary }}>{profile.name}</span>
+              )}
             </h1>
             {profile.subtitle && (
               <p
@@ -385,6 +391,7 @@ export default function TenantHomePage() {
           )}
         </div>
       </section>
+      </div>{/* end cover image wrapper */}
 
       {galleryImages.length > 0 && (
         <section className="max-w-3xl mx-auto px-5">
