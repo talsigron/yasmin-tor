@@ -422,15 +422,15 @@ function DatePicker({
                 borderColor: isSelected ? brandPrimary : '#F3F4F6',
                 backgroundColor: isSelected ? `${brandPrimary}08` : 'transparent',
               }}>
-              <div className="flex items-center justify-between">
-                <span className="text-xs" style={{ color: isSelected ? brandPrimary : '#6B7280' }}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-semibold" style={{ color: isSelected ? brandPrimary : '#374151' }}>
                   {day.date === today ? 'היום' : `יום ${dayNames[date.getDay()]}`}
                 </span>
-                <span className="text-lg font-bold" style={{ color: isSelected ? brandPrimary : '#1F2937' }}>
-                  {date.getDate()}
+                <span className="text-base font-bold" style={{ color: isSelected ? brandPrimary : '#1F2937' }}>
+                  {date.getDate()}/{date.getMonth() + 1}
                 </span>
               </div>
-              <span className="text-[11px] text-gray-500">
+              <span className="text-sm text-gray-600 font-medium">
                 {day.slots.map((s) => `${s.start} > ${s.end}`).join(', ')}
               </span>
             </button>
