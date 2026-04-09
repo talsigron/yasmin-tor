@@ -121,8 +121,8 @@ export default function CustomersView() {
   });
 
   // Gender stats
-  const maleCount = approvedCustomers.filter(c => c.gender === 'male' || c.gender === 'זכר').length;
-  const femaleCount = approvedCustomers.filter(c => c.gender === 'female' || c.gender === 'נקבה').length;
+  const maleCount = approvedCustomers.filter(c => c.gender === 'male').length;
+  const femaleCount = approvedCustomers.filter(c => c.gender === 'female').length;
   const unknownGenderCount = approvedCustomers.filter(c => !c.gender).length;
 
   const [showStats, setShowStats] = useState(false);
