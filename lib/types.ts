@@ -77,4 +77,5 @@ export interface BusinessProfile {
   autoApprove?: boolean | null; // null = use static config default
   minHoursBeforeBooking?: number | null; // null = no limit (0 means allow anytime)
   requireHealthDeclaration?: boolean; // fitness: block booking without health declaration
+  coverImage?: string; // wide-angle photo of the place, shown as background
 }

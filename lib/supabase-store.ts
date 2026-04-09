@@ -176,6 +176,7 @@ export async function fetchProfile(db: SupabaseClient, businessId: string): Prom
     autoApprove: data.auto_approve ?? null,
     minHoursBeforeBooking: data.min_hours_before_booking ?? null,
     requireHealthDeclaration: data.require_health_declaration ?? false,
+    coverImage: data.cover_image ?? undefined,
   };
 }
 
@@ -205,6 +206,7 @@ export async function updateProfileData(
   if (updates.autoApprove !== undefined) row.auto_approve = updates.autoApprove;
   if (updates.minHoursBeforeBooking !== undefined) row.min_hours_before_booking = updates.minHoursBeforeBooking;
   if (updates.requireHealthDeclaration !== undefined) row.require_health_declaration = updates.requireHealthDeclaration;
+  if (updates.coverImage !== undefined) row.cover_image = updates.coverImage;
 
   const { error } = await db
     .from('business_profiles')

@@ -182,9 +182,22 @@ export default function TenantHomePage() {
         </div>
       </nav>
 
-      {/* Hero */}
+      {/* Hero with optional cover image */}
       <header className="relative overflow-hidden">
-        <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${brandSecondary}, ${brandSecondary}4D, transparent)` }} />
+        {/* Cover image background */}
+        {profile.coverImage && (
+          <>
+            <div className="absolute inset-0">
+              <img src={profile.coverImage} alt="" className="w-full h-full object-cover" />
+            </div>
+            <div className="absolute inset-0 bg-black/55" />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 60%, var(--brand-bg, #fff) 100%)' }} />
+            <div className="absolute top-0 left-0 right-0 h-20" style={{ background: 'linear-gradient(to bottom, var(--brand-bg, #fff) 0%, transparent 100%)' }} />
+          </>
+        )}
+        {!profile.coverImage && (
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, ${brandSecondary}, ${brandSecondary}4D, transparent)` }} />
+        )}
         <div className="relative max-w-3xl mx-auto px-5 pt-12 pb-10 md:pt-20 md:pb-16">
           <div className="text-center animate-fade-in">
             {profile.logo && (
@@ -192,21 +205,42 @@ export default function TenantHomePage() {
                 <img
                   src={profile.logo}
                   alt={profile.name}
-                  className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover shadow-xl"
-                  style={{ border: `3px solid ${brandPrimary}30` }}
+                  className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover"
+                  style={{
+                    border: `3px solid ${brandPrimary}30`,
+                    boxShadow: profile.coverImage ? `0 0 30px ${brandPrimary}60, 0 8px 32px rgba(0,0,0,0.3)` : '0 10px 25px rgba(0,0,0,0.1)',
+                  }}
                 />
               </div>
             )}
-            <h1 className="font-display text-4xl md:text-6xl tracking-wide whitespace-nowrap mb-3" style={{ color: brandPrimary }}>
+            <h1
+              className="font-display text-4xl md:text-6xl tracking-wide whitespace-nowrap mb-3"
+              style={{
+                color: profile.coverImage ? '#fff' : brandPrimary,
+                textShadow: profile.coverImage ? `0 0 20px ${brandPrimary}80, 0 2px 10px rgba(0,0,0,0.5)` : 'none',
+              }}
+            >
               {profile.name}
             </h1>
             {profile.subtitle && (
-              <p className="font-display text-xl md:text-2xl mb-3" style={{ color: `${brandPrimary}99` }}>
+              <p
+                className="font-display text-xl md:text-2xl mb-3"
+                style={{
+                  color: profile.coverImage ? 'rgba(255,255,255,0.9)' : `${brandPrimary}99`,
+                  textShadow: profile.coverImage ? '0 1px 8px rgba(0,0,0,0.5)' : 'none',
+                }}
+              >
                 {profile.subtitle}
               </p>
             )}
             {profile.description && (
-              <p className="text-gray-500 text-base md:text-lg max-w-md mx-auto leading-relaxed mb-4">
+              <p
+                className="text-base md:text-lg max-w-md mx-auto leading-relaxed mb-4"
+                style={{
+                  color: profile.coverImage ? 'rgba(255,255,255,0.85)' : undefined,
+                  textShadow: profile.coverImage ? '0 1px 6px rgba(0,0,0,0.4)' : 'none',
+                }}
+              >
                 {profile.description}
               </p>
             )}
@@ -215,7 +249,12 @@ export default function TenantHomePage() {
           {customer ? (
             <div className="text-center mt-5 space-y-3">
               <span className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full"
-                style={{ color: brandPrimary, backgroundColor: `${brandPrimary}10` }}>
+                style={{
+                  color: profile.coverImage ? '#fff' : brandPrimary,
+                  backgroundColor: profile.coverImage ? 'rgba(255,255,255,0.15)' : `${brandPrimary}10`,
+                  textShadow: profile.coverImage ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+                  backdropFilter: profile.coverImage ? 'blur(4px)' : 'none',
+                }}>
                 <User size={14} />
                 {labels.hello} {customer.fullName}
               </span>
@@ -227,7 +266,10 @@ export default function TenantHomePage() {
                     setShowProfile(true);
                   }}
                   className="block mx-auto text-xs underline cursor-pointer"
-                  style={{ color: brandPrimary }}
+                  style={{
+                    color: profile.coverImage ? '#fff' : brandPrimary,
+                    textShadow: profile.coverImage ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+                  }}
                 >
                   השלמת פרופיל
                 </button>

@@ -39,8 +39,10 @@ export default function ProfileEditor() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   // Gallery edit mode
   const [galleryEditMode, setGalleryEditMode] = useState(false);
@@ -144,6 +146,21 @@ export default function ProfileEditor() {
     } finally {
       setUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+    setUploadingCover(true);
+    try {
+      const url = await uploadImage(supabase, businessId, file);
+      setProfile({ ...profile, coverImage: url });
+    } catch (err) {
+      console.error('Failed to upload cover:', err);
+    } finally {
+      setUploadingCover(false);
+      if (coverInputRef.current) coverInputRef.current.value = '';
     }
   };
 
@@ -252,6 +269,39 @@ export default function ProfileEditor() {
                 {uploadingLogo ? 'מעלה לוגו...' : 'העלאת לוגו'}
               </Button>
               <p className="text-[10px] text-gray-400 mt-1">{labels.logoHint}</p>
+            </div>
+
+            {/* Cover image */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">תמונה של המקום</label>
+              {profile.coverImage && (
+                <div className="mb-2">
+                  <img src={profile.coverImage} alt="תמונת המקום" className="w-full h-28 rounded-xl object-cover border border-gray-200" />
+                  <button
+                    onClick={() => setProfile({ ...profile, coverImage: '' })}
+                    className="text-xs text-red-500 hover:text-red-600 cursor-pointer mt-1"
+                  >
+                    הסרת תמונה
+                  </button>
+                </div>
+              )}
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleCoverUpload}
+                className="hidden"
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Upload size={14} />}
+                onClick={() => coverInputRef.current?.click()}
+                loading={uploadingCover}
+              >
+                {uploadingCover ? 'מעלה תמונה...' : 'העלאת תמונה'}
+              </Button>
+              <p className="text-[10px] text-gray-400 mt-1">מומלץ להעלות תמונה מזווית רחבה של המקום</p>
             </div>
           </div>
         )}
