@@ -80,6 +80,10 @@ export interface BusinessProfile {
   coverImage?: string; // wide-angle photo of the place, shown as background
   cancellationHoursLimit?: number;
   shopEnabled?: boolean;
+  bannerEnabled?: boolean;
+  bannerMessage?: string;
+  bannerEndDate?: string; // YYYY-MM-DD or undefined = until new message
+  bannerDismissible?: boolean;
 }
 
 export interface PunchCardType {

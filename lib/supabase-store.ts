@@ -183,6 +183,10 @@ export async function fetchProfile(db: SupabaseClient, businessId: string): Prom
     coverImage: data.cover_image ?? undefined,
     cancellationHoursLimit: data.cancellation_hours_limit ?? 6,
     shopEnabled: data.shop_enabled ?? false,
+    bannerEnabled: data.banner_enabled ?? false,
+    bannerMessage: data.banner_message ?? undefined,
+    bannerEndDate: data.banner_end_date ?? undefined,
+    bannerDismissible: data.banner_dismissible ?? true,
   };
 }
 
@@ -215,6 +219,10 @@ export async function updateProfileData(
   if (updates.coverImage !== undefined) row.cover_image = updates.coverImage;
   if (updates.cancellationHoursLimit !== undefined) row.cancellation_hours_limit = updates.cancellationHoursLimit;
   if (updates.shopEnabled !== undefined) row.shop_enabled = updates.shopEnabled;
+  if (updates.bannerEnabled !== undefined) row.banner_enabled = updates.bannerEnabled;
+  if (updates.bannerMessage !== undefined) row.banner_message = updates.bannerMessage;
+  if (updates.bannerEndDate !== undefined) row.banner_end_date = updates.bannerEndDate || null;
+  if (updates.bannerDismissible !== undefined) row.banner_dismissible = updates.bannerDismissible;
 
   const { error } = await db
     .from('business_profiles')

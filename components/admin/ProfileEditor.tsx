@@ -25,6 +25,7 @@ import {
   ChevronRight,
   ChevronDown,
   CalendarClock,
+  Megaphone,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -525,6 +526,69 @@ export default function ProfileEditor() {
                   </button>
                 </div>
               </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Popup banner message */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4">
+        <button onClick={() => toggleSection('banner')} className="w-full flex items-center justify-between py-2">
+          <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <Megaphone size={14} className="text-mint-500" />
+            הודעה מתפרצת במסך הבית
+          </h3>
+          <ChevronDown size={16} className={cn('text-gray-400 transition-transform', openSections['banner'] && 'rotate-180')} />
+        </button>
+        {openSections['banner'] && profile && (
+          <div className="space-y-3 pt-3">
+            <div className="flex items-center justify-between py-2">
+              <span className="text-xs text-gray-600">הצגת הודעה</span>
+              <button
+                onClick={() => setProfile({ ...profile, bannerEnabled: !profile.bannerEnabled })}
+                className="cursor-pointer"
+              >
+                {profile.bannerEnabled
+                  ? <ToggleRight className="text-mint-500" size={28} />
+                  : <ToggleLeft className="text-gray-300" size={28} />}
+              </button>
+            </div>
+            {profile.bannerEnabled && (
+              <>
+                <div>
+                  <label className="text-xs text-gray-600 block mb-1">טקסט ההודעה</label>
+                  <textarea
+                    value={profile.bannerMessage || ''}
+                    onChange={(e) => setProfile({ ...profile, bannerMessage: e.target.value })}
+                    placeholder="לדוגמה: בתאריך 29/4 לא יתקיימו אימונים קבוצתיים בשל חג יום העצמאות. חג עצמאות שמח!"
+                    className="w-full text-sm border border-gray-200 rounded-lg p-2 min-h-[80px] focus:outline-none focus:border-mint-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600 block mb-1">תאריך סיום (אופציונלי)</label>
+                  <input
+                    type="date"
+                    value={profile.bannerEndDate || ''}
+                    onChange={(e) => setProfile({ ...profile, bannerEndDate: e.target.value })}
+                    className="w-full text-sm border border-gray-200 rounded-lg p-2 focus:outline-none focus:border-mint-400"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">אם ריק — ההודעה תוצג עד שתעדכן או תכבה אותה ידנית</p>
+                </div>
+                <div className="flex items-center justify-between py-2 border-t border-gray-100">
+                  <div>
+                    <span className="text-xs text-gray-600 block">ניתן לסגירה על ידי הלקוח</span>
+                    <span className="text-[10px] text-gray-400">לקוח יוכל לסגור את ההודעה בלחיצה על X</span>
+                  </div>
+                  <button
+                    onClick={() => setProfile({ ...profile, bannerDismissible: !(profile.bannerDismissible !== false) })}
+                    className="cursor-pointer"
+                  >
+                    {profile.bannerDismissible !== false
+                      ? <ToggleRight className="text-mint-500" size={28} />
+                      : <ToggleLeft className="text-gray-300" size={28} />}
+                  </button>
+                </div>
+              </>
             )}
           </div>
         )}
