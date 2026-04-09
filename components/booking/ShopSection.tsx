@@ -29,14 +29,17 @@ export default function ShopSection({ brandPrimary }: { brandPrimary: string }) 
       </div>
       <div className="space-y-2">
         {items.map(item => (
-          <div key={item.id} className="bg-white border border-gray-100 rounded-xl px-4 py-3 flex items-center justify-between shadow-sm">
-            <div>
+          <div key={item.id} className="bg-white border border-gray-100 rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm">
+            {item.imageUrl && (
+              <img src={item.imageUrl} alt={item.name} className="w-14 h-14 rounded-xl object-cover shrink-0 border border-gray-100" />
+            )}
+            <div className="flex-1 min-w-0">
               <p className="font-semibold text-gray-800 text-sm">{item.name}</p>
               {item.description && <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>}
+              {item.price !== undefined && item.price !== null && (
+                <span className="font-bold text-sm mt-1 block" style={{ color: brandPrimary }}>₪{item.price}</span>
+              )}
             </div>
-            {item.price !== undefined && item.price !== null && (
-              <span className="font-bold text-sm" style={{ color: brandPrimary }}>₪{item.price}</span>
-            )}
           </div>
         ))}
       </div>
