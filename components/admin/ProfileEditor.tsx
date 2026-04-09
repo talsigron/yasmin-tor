@@ -301,7 +301,7 @@ export default function ProfileEditor() {
               >
                 {uploadingCover ? 'מעלה תמונה...' : 'העלאת תמונה'}
               </Button>
-              <p className="text-[10px] text-gray-400 mt-1">מומלץ להעלות תמונה מזווית רחבה של המקום</p>
+              <p className="text-[10px] text-gray-400 mt-1">מומלץ להעלות תמונה מזווית רחבה של המקום. גם בלי, זה ייראה מצוין 😍</p>
             </div>
           </div>
         )}
