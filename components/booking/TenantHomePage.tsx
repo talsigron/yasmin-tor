@@ -387,17 +387,29 @@ export default function TenantHomePage() {
           <Sparkles size={18} style={{ color: brandPrimary }} />
           <h2 className="text-xl font-extrabold text-gray-800">{labels.services}</h2>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {services.map((service, i) => (
+        {services.length === 1 ? (
+          <div className="max-w-md mx-auto">
             <ServiceCard
-              key={service.id}
-              service={service}
+              service={services[0]}
               onBook={(s) => setSelectedService(s)}
-              delay={i * 50}
+              delay={0}
               brandColor={profile.brandColors?.primary || brandPrimary}
+              wide
             />
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {services.map((service, i) => (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                onBook={(s) => setSelectedService(s)}
+                delay={i * 50}
+                brandColor={profile.brandColors?.primary || brandPrimary}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {profile.shopEnabled && <ShopSection brandPrimary={brandPrimary} />}

@@ -120,7 +120,15 @@ export default function BookingFlow({ service, onClose }: BookingFlowProps) {
   const phoneNumber = profile.phone || '0500000000';
   const whatsappLink = `https://wa.me/972${phoneNumber.replace(/^0/, '')}`;
   const calendarLink = selectedDate && selectedTime
-    ? generateCalendarLink(`${labels.booking} - ${service.name}`, selectedDate, selectedTime, service.duration, profile.name)
+    ? generateCalendarLink(
+        `${labels.booking} - ${service.name}`,
+        selectedDate,
+        selectedTime,
+        service.duration,
+        profile.name,
+        profile.address || profile.name,
+        labels.booking
+      )
     : '';
   const whatsappShareLink = `https://wa.me/?text=${encodeURIComponent(`קבעתי ${labels.booking} ב-${profile.name}! ${service.name} ב-${selectedDate ? formatDate(selectedDate) : ''} בשעה ${selectedTime}`)}`;
 

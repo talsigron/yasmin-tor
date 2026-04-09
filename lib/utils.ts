@@ -42,7 +42,9 @@ export function generateCalendarLink(
   date: string,
   time: string,
   duration: number,
-  location: string
+  businessName: string,
+  location?: string,
+  bookingLabel?: string
 ): string {
   const pad = (n: number) => n.toString().padStart(2, '0');
   const [year, month, day] = date.split('-');
@@ -55,17 +57,19 @@ export function generateCalendarLink(
   const endM = endMinutes % 60;
   const endStr = `${year}${pad(parseInt(month))}${pad(parseInt(day))}T${pad(endH)}${pad(endM)}00`;
 
+  const label = bookingLabel || 'תור';
+
   // Generate ICS file content (universal - works on iPhone, Android, desktop)
   const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//MentaNail//Appointment//HE',
+    'PRODID:-//YasminTor//Booking//HE',
     'BEGIN:VEVENT',
     `DTSTART;TZID=Asia/Jerusalem:${startStr}`,
     `DTEND;TZID=Asia/Jerusalem:${endStr}`,
     `SUMMARY:${title}`,
-    `LOCATION:${location}`,
-    `DESCRIPTION:תור ב-Menta Nail`,
+    `LOCATION:${location || businessName}`,
+    `DESCRIPTION:${label} ב-${businessName}`,
     'STATUS:CONFIRMED',
     'END:VEVENT',
     'END:VCALENDAR',

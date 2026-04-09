@@ -5,6 +5,7 @@ import { Calendar, Scissors, Clock, LogOut, Home, Settings, Users, Edit3, Bell, 
 import { cn } from '@/lib/utils';
 import { fetchPendingCustomers } from '@/lib/supabase-store';
 import { useTenant } from '@/contexts/TenantContext';
+import { useProfile } from '@/hooks/useSupabase';
 import {
   isNotificationSupported, isNotificationEnabled,
   requestNotificationPermission, disableNotifications, getNotificationPermission,
@@ -30,6 +31,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const { supabase, config } = useTenant();
   const { businessId, labels, slug, defaultColors } = config;
   const brandPrimary = defaultColors.primary;
+  const { profile } = useProfile();
 
   const tabs: { key: Tab; label: string; icon: typeof Calendar }[] = [
     { key: 'appointments', label: labels.calendar.replace('יומן ', ''), icon: Calendar },
@@ -93,7 +95,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           <div className="flex items-center gap-2">
             <div>
               <span className="text-sm font-bold text-gray-800">ניהול</span>
-              <span className="text-[10px] text-gray-400 block">{config.id === 'mentanail' ? 'Menta Nail' : '180 Studio'}</span>
+              <span className="text-[10px] text-gray-400 block">{profile?.name || ''}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
