@@ -88,6 +88,15 @@ export interface BusinessProfile {
   paymentMethods?: PaymentMethods;
   expenseCategories?: string[];
   showParticipants?: boolean; // show names of existing session attendees in booking flow
+  ownerEmail?: string;
+  ownerNotify?: NotificationPreferences;
+  customerNotify?: NotificationPreferences;
+}
+
+export interface NotificationPreferences {
+  email: boolean;
+  sms: boolean;
+  events: Record<string, boolean>;
 }
 
 export interface PaymentMethods {

@@ -28,6 +28,7 @@ import {
   Megaphone,
   ShoppingBag,
   Scissors,
+  Mail,
 } from 'lucide-react';
 import ShopManager from './ShopManager';
 import ServicesManager from './ServicesManager';
@@ -626,6 +627,115 @@ export default function ProfileEditor() {
                 </div>
               </>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* Notifications */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4">
+        <button onClick={() => toggleSection('notifications')} className="w-full flex items-center justify-between py-2">
+          <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <Mail size={14} className="text-mint-500" />
+            עדכונים
+          </h3>
+          <ChevronDown size={16} className={cn('text-gray-400 transition-transform', openSections['notifications'] && 'rotate-180')} />
+        </button>
+        {openSections['notifications'] && profile && (
+          <div className="pt-3 space-y-4">
+            <div>
+              <label className="text-xs text-gray-600 block mb-1">מייל לקבלת עדכונים</label>
+              <input
+                type="email"
+                value={profile.ownerEmail || ''}
+                onChange={(e) => setProfile({ ...profile, ownerEmail: e.target.value })}
+                placeholder="your@email.com"
+                dir="ltr"
+                className="w-full text-sm border border-gray-200 rounded-lg p-2 text-left"
+              />
+            </div>
+
+            {/* Owner notifications */}
+            <div className="border-t border-gray-100 pt-3">
+              <p className="text-xs font-bold text-gray-700 mb-2">עדכונים לבעל העסק</p>
+              <div className="flex gap-4 mb-3">
+                <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={profile.ownerNotify?.email ?? true}
+                    onChange={(e) => setProfile({ ...profile, ownerNotify: { ...(profile.ownerNotify || { email: true, sms: false, events: {} }), email: e.target.checked } })}
+                  />
+                  מייל
+                </label>
+                <label className="flex items-center gap-1.5 text-xs text-gray-400">
+                  <input type="checkbox" disabled />
+                  SMS (בקרוב)
+                </label>
+              </div>
+              <div className="space-y-1.5">
+                {([
+                  { key: 'new_customer', label: 'לקוח חדש במערכת' },
+                  { key: 'customer_booked', label: 'לקוח נרשם לאימון' },
+                  { key: 'customer_cancelled', label: 'לקוח ביטל אימון' },
+                  { key: 'monthly_summary', label: 'סיכום חודשי' },
+                ] as const).map(({ key, label }) => (
+                  <label key={key} className="flex items-center gap-2 text-xs text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={profile.ownerNotify?.events?.[key] ?? false}
+                      onChange={(e) => setProfile({
+                        ...profile,
+                        ownerNotify: {
+                          ...(profile.ownerNotify || { email: true, sms: false, events: {} }),
+                          events: { ...(profile.ownerNotify?.events || {}), [key]: e.target.checked },
+                        },
+                      })}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Customer notifications */}
+            <div className="border-t border-gray-100 pt-3">
+              <p className="text-xs font-bold text-gray-700 mb-2">עדכונים ללקוח</p>
+              <div className="flex gap-4 mb-3">
+                <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={profile.customerNotify?.email ?? true}
+                    onChange={(e) => setProfile({ ...profile, customerNotify: { ...(profile.customerNotify || { email: true, sms: false, events: {} }), email: e.target.checked } })}
+                  />
+                  מייל
+                </label>
+                <label className="flex items-center gap-1.5 text-xs text-gray-400">
+                  <input type="checkbox" disabled />
+                  SMS (בקרוב)
+                </label>
+              </div>
+              <div className="space-y-1.5">
+                {([
+                  { key: 'booking_confirmed', label: 'אישור רישום' },
+                  { key: 'cancel_confirmed', label: 'אישור ביטול' },
+                  { key: 'birthday_greeting', label: 'ברכת יום הולדת (בשעה 8:00)' },
+                ] as const).map(({ key, label }) => (
+                  <label key={key} className="flex items-center gap-2 text-xs text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={profile.customerNotify?.events?.[key] ?? false}
+                      onChange={(e) => setProfile({
+                        ...profile,
+                        customerNotify: {
+                          ...(profile.customerNotify || { email: true, sms: false, events: {} }),
+                          events: { ...(profile.customerNotify?.events || {}), [key]: e.target.checked },
+                        },
+                      })}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>

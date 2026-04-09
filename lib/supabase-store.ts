@@ -191,6 +191,9 @@ export async function fetchProfile(db: SupabaseClient, businessId: string): Prom
     paymentMethods: data.payment_methods ?? { bit: true, cash: true },
     expenseCategories: data.expense_categories ?? ['שכירות', 'ציוד', 'חשבונות', 'שיווק', 'שכר', 'אחר'],
     showParticipants: data.show_participants ?? false,
+    ownerEmail: data.owner_email ?? undefined,
+    ownerNotify: data.owner_notify ?? { email: true, sms: false, events: { new_customer: true, customer_booked: true, customer_cancelled: true, monthly_summary: false } },
+    customerNotify: data.customer_notify ?? { email: true, sms: false, events: { booking_confirmed: true, cancel_confirmed: true, birthday_greeting: true } },
   };
 }
 
@@ -231,6 +234,9 @@ export async function updateProfileData(
   if (updates.paymentMethods !== undefined) row.payment_methods = updates.paymentMethods;
   if (updates.expenseCategories !== undefined) row.expense_categories = updates.expenseCategories;
   if (updates.showParticipants !== undefined) row.show_participants = updates.showParticipants;
+  if (updates.ownerEmail !== undefined) row.owner_email = updates.ownerEmail || null;
+  if (updates.ownerNotify !== undefined) row.owner_notify = updates.ownerNotify;
+  if (updates.customerNotify !== undefined) row.customer_notify = updates.customerNotify;
 
   const { error } = await db
     .from('business_profiles')

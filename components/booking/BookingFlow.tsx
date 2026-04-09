@@ -5,6 +5,7 @@ import { Service, DayAvailability } from '@/lib/types';
 import { getCurrentCustomer, setCurrentCustomer } from '@/lib/store';
 import { useAvailability, useProfile } from '@/hooks/useSupabase';
 import { createAppointment, getAvailableSlotsAsync, checkCustomerStatus, fetchCustomerAppointments, fetchCustomerById, fetchSessionParticipants, SlotInfo } from '@/lib/supabase-store';
+import { sendEmail, customerBookedEmail, bookingConfirmationEmail } from '@/lib/email';
 import { formatDate, formatPrice, formatDuration, generateCalendarLink, cn } from '@/lib/utils';
 import { useTenant } from '@/contexts/TenantContext';
 import {
@@ -114,6 +115,23 @@ export default function BookingFlow({ service, onClose }: BookingFlowProps) {
         duration: service.duration,
         status: 'confirmed',
       });
+
+      // Send notifications (best-effort)
+      const ctx = { businessName: profileData?.name || '', brandColor: profileData?.brandColors?.primary || brandPrimary };
+      const displayDate = formatDate(selectedDate);
+
+      // Owner notification
+      if (profileData?.ownerNotify?.email && profileData?.ownerNotify?.events?.customer_booked && profileData?.ownerEmail) {
+        const { subject, html } = customerBookedEmail(ctx, {
+          customerName: customer.fullName,
+          serviceName: service.name,
+          date: displayDate,
+          time: selectedTime,
+        });
+        sendEmail({ to: profileData.ownerEmail, subject, html });
+      }
+      // Customer confirmation (note: we don't have customer email in this flow yet — skipping)
+
       setStep('success');
     } catch (err) {
       if (err instanceof Error && err.message === 'DOUBLE_BOOKED') {

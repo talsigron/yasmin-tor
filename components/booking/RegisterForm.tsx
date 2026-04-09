@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { registerNewCustomer, uploadHealthDeclaration, fetchAutoApproveSetting, fetchPunchCardTypes } from '@/lib/supabase-store';
+import { registerNewCustomer, uploadHealthDeclaration, fetchAutoApproveSetting, fetchPunchCardTypes, fetchProfile } from '@/lib/supabase-store';
 import type { CustomerExtendedFields } from '@/lib/supabase-store';
 import { setCurrentCustomer } from '@/lib/store';
 import { useTenant } from '@/contexts/TenantContext';
 import { User, Phone, Clock, Bell, Upload } from 'lucide-react';
 import { PunchCardType } from '@/lib/types';
+import { sendEmail, customerRegisteredEmail } from '@/lib/email';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import DateOfBirthInput from '@/components/ui/DateOfBirthInput';
@@ -139,6 +140,18 @@ export default function RegisterForm({ onComplete }: RegisterFormProps) {
       }
 
       setCurrentCustomer(tenantId, customer);
+
+      // Email owner about new customer (best-effort)
+      try {
+        const profile = await fetchProfile(supabase, businessId);
+        if (profile.ownerNotify?.email && profile.ownerNotify?.events?.new_customer && profile.ownerEmail) {
+          const { subject, html } = customerRegisteredEmail(
+            { businessName: profile.name, brandColor: profile.brandColors?.primary },
+            { name: customer.fullName, phone: customer.phone }
+          );
+          sendEmail({ to: profile.ownerEmail, subject, html });
+        }
+      } catch (e) { /* ignore email errors */ }
 
       if (customer.status === 'pending') {
         setPendingMessage(true);

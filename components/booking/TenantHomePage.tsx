@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Service, Appointment, Customer } from '@/lib/types';
 import { getCurrentCustomer, logoutCustomer } from '@/lib/store';
 import { fetchCustomerAppointments, cancelAppointmentByCustomer, fetchCustomerById } from '@/lib/supabase-store';
+import { sendEmail, customerCancelledEmail } from '@/lib/email';
 import { useServices, useProfile, useGallery } from '@/hooks/useSupabase';
 import { useTenant } from '@/contexts/TenantContext';
 import ServiceCard from './ServiceCard';
@@ -110,8 +111,21 @@ export default function TenantHomePage() {
     const confirmed = confirm(labels.confirmCancel);
     if (!confirmed) return;
     try {
+      const appt = myAppointments.find((a) => a.id === apptId);
       await cancelAppointmentByCustomer(supabase, businessId, apptId, customer.id);
       setMyAppointments((prev) => prev.filter((a) => a.id !== apptId));
+
+      // Email owner about the cancellation (best-effort)
+      if (appt && profile.ownerNotify?.email && profile.ownerNotify?.events?.customer_cancelled && profile.ownerEmail) {
+        const ctx = { businessName: profile.name, brandColor: profile.brandColors?.primary || brandPrimary };
+        const { subject, html } = customerCancelledEmail(ctx, {
+          customerName: customer.fullName,
+          serviceName: appt.serviceName,
+          date: appt.date,
+          time: appt.time,
+        });
+        sendEmail({ to: profile.ownerEmail, subject, html });
+      }
     } catch (err) {
       console.error('Failed to cancel:', err);
     }
