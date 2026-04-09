@@ -83,14 +83,24 @@ export default function CustomerDetailModal({ customer, onClose, onSaved }: Prop
     const type = cardTypes.find(t => t.id === newCardTypeId);
     if (!type) return;
     try {
+      let expiresAt: string | undefined;
+      if (type.measurementType === 'months' && type.monthsCount) {
+        const d = new Date();
+        d.setMonth(d.getMonth() + type.monthsCount);
+        expiresAt = d.toISOString();
+      } else if (type.validityDays) {
+        expiresAt = new Date(Date.now() + type.validityDays * 86400000).toISOString();
+      }
       await createCustomerPunchCard(supabase, businessId, {
         customerId: customer.id,
         customerName: customer.fullName,
         punchCardTypeId: type.id,
         punchCardName: type.name,
-        entriesTotal: type.entriesCount,
+        measurementType: type.measurementType,
+        entriesTotal: type.measurementType === 'entries' ? type.entriesCount : 0,
         entriesUsed: 0,
         purchasedAt: new Date().toISOString(),
+        expiresAt,
         isPaid: newCardPaid,
       });
       const fresh = await fetchCustomerPunchCards(supabase, businessId, customer.id);

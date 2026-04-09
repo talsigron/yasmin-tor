@@ -20,11 +20,19 @@ export default function PunchCardsManager() {
   const [customerCards, setCustomerCards] = useState<CustomerPunchCard[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'cards' | 'debts' | 'types'>('cards');
+  const [activeTab, setActiveTab] = useState<'cards' | 'near_end' | 'debts' | 'types'>('cards');
 
   const [showTypeForm, setShowTypeForm] = useState(false);
   const [editingType, setEditingType] = useState<PunchCardType | null>(null);
-  const [typeForm, setTypeForm] = useState({ name: '', entriesCount: '10', price: '', validityDays: '' });
+  const [typeForm, setTypeForm] = useState({
+    name: '',
+    measurementType: 'entries' as 'entries' | 'months' | 'unlimited',
+    entriesCount: '10',
+    monthsCount: '1',
+    price: '',
+    validityDays: '',
+    nearEndDays: '3',
+  });
 
   const [showAssignForm, setShowAssignForm] = useState(false);
   const [assignForm, setAssignForm] = useState({ customerId: '', punchCardTypeId: '', isPaid: false, paymentMethod: 'מזומן' });
@@ -53,11 +61,20 @@ export default function PunchCardsManager() {
   async function saveType() {
     if (!typeForm.name || !typeForm.price) return;
     try {
-      const d = { name: typeForm.name, entriesCount: Number(typeForm.entriesCount), price: Number(typeForm.price), validityDays: typeForm.validityDays ? Number(typeForm.validityDays) : undefined, isActive: true };
+      const d: Omit<PunchCardType, 'id' | 'businessId' | 'createdAt'> = {
+        name: typeForm.name,
+        measurementType: typeForm.measurementType,
+        entriesCount: typeForm.measurementType === 'entries' ? Number(typeForm.entriesCount) : 0,
+        monthsCount: typeForm.measurementType === 'months' ? Number(typeForm.monthsCount) : undefined,
+        price: Number(typeForm.price),
+        validityDays: typeForm.validityDays ? Number(typeForm.validityDays) : undefined,
+        nearEndDays: typeForm.nearEndDays ? Number(typeForm.nearEndDays) : 3,
+        isActive: true,
+      };
       if (editingType) await updatePunchCardType(supabase, editingType.id, d);
       else await createPunchCardType(supabase, businessId, d);
       setShowTypeForm(false); setEditingType(null);
-      setTypeForm({ name: '', entriesCount: '10', price: '', validityDays: '' });
+      setTypeForm({ name: '', measurementType: 'entries', entriesCount: '10', monthsCount: '1', price: '', validityDays: '', nearEndDays: '3' });
       loadAll();
     } catch (e) { console.error(e); }
   }
@@ -67,11 +84,22 @@ export default function PunchCardsManager() {
     const customer = customers.find(c => c.id === assignForm.customerId);
     if (!type || !customer) return;
     try {
-      const expiresAt = type.validityDays ? new Date(Date.now() + type.validityDays * 86400000).toISOString() : undefined;
+      // Compute expiresAt based on measurement type
+      let expiresAt: string | undefined;
+      if (type.measurementType === 'months' && type.monthsCount) {
+        const d = new Date();
+        d.setMonth(d.getMonth() + type.monthsCount);
+        expiresAt = d.toISOString();
+      } else if (type.validityDays) {
+        expiresAt = new Date(Date.now() + type.validityDays * 86400000).toISOString();
+      }
+
       const card = await createCustomerPunchCard(supabase, businessId, {
         customerId: customer.id, customerName: customer.fullName,
         punchCardTypeId: type.id, punchCardName: type.name,
-        entriesTotal: type.entriesCount, entriesUsed: 0,
+        measurementType: type.measurementType,
+        entriesTotal: type.measurementType === 'entries' ? type.entriesCount : 0,
+        entriesUsed: 0,
         isPaid: assignForm.isPaid, paymentMethod: assignForm.isPaid ? assignForm.paymentMethod : undefined,
         purchasedAt: new Date().toISOString(), expiresAt,
       });
@@ -122,17 +150,50 @@ export default function PunchCardsManager() {
     return `${d.getDate().toString().padStart(2,'0')}.${(d.getMonth()+1).toString().padStart(2,'0')}.${String(d.getFullYear()).slice(2)}`;
   };
 
+  const daysUntilExpiry = (card: CustomerPunchCard): number | null => {
+    if (!card.expiresAt) return null;
+    return Math.ceil((new Date(card.expiresAt).getTime() - Date.now()) / 86400000);
+  };
+
+  const isExpired = (card: CustomerPunchCard) => {
+    if (card.expiresAt && new Date(card.expiresAt) < new Date()) return true;
+    return false;
+  };
+
+  const isNearEnd = (card: CustomerPunchCard): boolean => {
+    const type = cardTypes.find(t => t.id === card.punchCardTypeId);
+    const threshold = type?.nearEndDays ?? 3;
+    if (card.measurementType === 'months' || card.measurementType === 'unlimited') {
+      const days = daysUntilExpiry(card);
+      return days !== null && days <= threshold && days >= 0;
+    }
+    // entries-based
+    const rem = card.entriesTotal - card.entriesUsed;
+    return rem > 0 && rem <= 2;
+  };
+
+  const isFullyUsed = (card: CustomerPunchCard): boolean => {
+    if (card.measurementType === 'entries') return card.entriesUsed >= card.entriesTotal;
+    return false; // time-based and unlimited don't get "used up" by entries
+  };
+
   const getStatus = (card: CustomerPunchCard) => {
     if (!card.isPaid) return { cls: 'bg-red-100 text-red-700', label: 'לא שולם' };
-    if (card.expiresAt && new Date(card.expiresAt) < new Date()) return { cls: 'bg-gray-100 text-gray-500', label: 'פג תוקף' };
-    if (card.entriesUsed >= card.entriesTotal) return { cls: 'bg-gray-100 text-gray-500', label: 'נוצל' };
-    const rem = card.entriesTotal - card.entriesUsed;
-    if (rem <= 2) return { cls: 'bg-orange-100 text-orange-700', label: `נשארו ${rem}` };
+    if (isExpired(card)) return { cls: 'bg-gray-100 text-gray-500', label: 'פג תוקף' };
+    if (isFullyUsed(card)) return { cls: 'bg-gray-100 text-gray-500', label: 'נוצל' };
+    if (isNearEnd(card)) {
+      if (card.measurementType === 'months' || card.measurementType === 'unlimited') {
+        const days = daysUntilExpiry(card);
+        return { cls: 'bg-orange-100 text-orange-700', label: `לפני סיום (${days}י׳)` };
+      }
+      const rem = card.entriesTotal - card.entriesUsed;
+      return { cls: 'bg-orange-100 text-orange-700', label: `נשארו ${rem}` };
+    }
     return { cls: 'bg-green-100 text-green-700', label: 'פעיל' };
   };
 
-  const activeCards = customerCards.filter(c => c.entriesUsed < c.entriesTotal && c.isPaid && (!c.expiresAt || new Date(c.expiresAt) > new Date()));
-  const almostDone = customerCards.filter(c => { const r = c.entriesTotal - c.entriesUsed; return r > 0 && r <= 2 && c.isPaid; });
+  const activeCards = customerCards.filter(c => c.isPaid && !isFullyUsed(c) && !isExpired(c));
+  const almostDone = customerCards.filter(c => c.isPaid && !isFullyUsed(c) && !isExpired(c) && isNearEnd(c));
   const debtCards = customerCards.filter(c => !c.isPaid);
 
   if (loading) return (
@@ -145,25 +206,30 @@ export default function PunchCardsManager() {
     <div className="space-y-4">
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-green-50 rounded-xl p-3 text-center">
+        <button onClick={() => setActiveTab('cards')} className="bg-green-50 rounded-xl p-3 text-center cursor-pointer">
           <p className="text-2xl font-bold text-green-700">{activeCards.length}</p>
           <p className="text-xs text-green-600 mt-0.5">פעילות</p>
-        </div>
-        <div className="bg-orange-50 rounded-xl p-3 text-center">
+        </button>
+        <button onClick={() => setActiveTab('near_end')} className="bg-orange-50 rounded-xl p-3 text-center cursor-pointer">
           <p className="text-2xl font-bold text-orange-600">{almostDone.length}</p>
           <p className="text-xs text-orange-500 mt-0.5">לפני סיום</p>
-        </div>
-        <div className="bg-red-50 rounded-xl p-3 text-center">
+        </button>
+        <button onClick={() => setActiveTab('debts')} className="bg-red-50 rounded-xl p-3 text-center cursor-pointer">
           <p className="text-2xl font-bold text-red-600">{debtCards.length}</p>
           <p className="text-xs text-red-500 mt-0.5">חובות</p>
-        </div>
+        </button>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
-        {([['cards','כרטיסיות'], ['debts',`חובות (${debtCards.length})`], ['types','סוגים']] as const).map(([key, label]) => (
+        {([
+          ['cards','כרטיסיות'],
+          ['near_end',`לפני סיום (${almostDone.length})`],
+          ['debts',`חובות (${debtCards.length})`],
+          ['types','סוגים']
+        ] as const).map(([key, label]) => (
           <button key={key} onClick={() => setActiveTab(key)}
-            className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${activeTab === key ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600'}`}>
+            className={`flex-1 py-2 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${activeTab === key ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600'}`}>
             {label}
           </button>
         ))}
@@ -191,7 +257,13 @@ export default function PunchCardsManager() {
               <select value={assignForm.punchCardTypeId} onChange={e => setAssignForm(p => ({...p, punchCardTypeId: e.target.value}))}
                 className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm">
                 <option value="">— בחר סוג כרטיסייה —</option>
-                {cardTypes.filter(t => t.isActive).map(t => <option key={t.id} value={t.id}>{t.name} ({t.entriesCount} כניסות — ₪{t.price})</option>)}
+                {cardTypes.filter(t => t.isActive).map(t => {
+                  const desc =
+                    t.measurementType === 'entries' ? `${t.entriesCount} כניסות` :
+                    t.measurementType === 'months' ? `${t.monthsCount ?? ''} חודשים` :
+                    'ללא הגבלה';
+                  return <option key={t.id} value={t.id}>{t.name} ({desc} — ₪{t.price})</option>;
+                })}
               </select>
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="checkbox" checked={assignForm.isPaid} onChange={e => setAssignForm(p => ({...p, isPaid: e.target.checked}))} />
@@ -220,7 +292,11 @@ export default function PunchCardsManager() {
             {customerCards.length === 0 && <p className="text-center text-gray-400 text-sm py-6">אין כרטיסיות עדיין</p>}
             {customerCards.map(card => {
               const { cls, label } = getStatus(card);
-              const pct = Math.round((card.entriesUsed / card.entriesTotal) * 100);
+              const isEntries = card.measurementType === 'entries';
+              const pct = isEntries && card.entriesTotal > 0
+                ? Math.round((card.entriesUsed / card.entriesTotal) * 100)
+                : 0;
+              const canUseEntry = isEntries && card.entriesUsed < card.entriesTotal;
               return (
                 <div key={card.id} className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
                   <div className="flex items-start justify-between mb-1.5">
@@ -230,13 +306,19 @@ export default function PunchCardsManager() {
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cls}`}>{label}</span>
                   </div>
-                  <div className="mb-2">
-                    <div className="flex justify-between text-xs text-gray-400 mb-1">
-                      <span>{card.entriesUsed} שומשו</span>
-                      <span>{card.entriesTotal - card.entriesUsed} נשארו מתוך {card.entriesTotal}</span>
+                  {isEntries ? (
+                    <div className="mb-2">
+                      <div className="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>{card.entriesUsed} שומשו</span>
+                        <span>{card.entriesTotal - card.entriesUsed} נשארו מתוך {card.entriesTotal}</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 rounded-full"><div className="h-full bg-indigo-400 rounded-full" style={{ width: `${pct}%` }} /></div>
                     </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full"><div className="h-full bg-indigo-400 rounded-full" style={{ width: `${pct}%` }} /></div>
-                  </div>
+                  ) : (
+                    <div className="mb-2 text-xs text-gray-500">
+                      {card.measurementType === 'months' ? '⏳ כרטיסייה על בסיס חודשים' : '♾️ ללא הגבלת כניסות'}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-400">{card.expiresAt ? `עד ${formatDate(card.expiresAt)}` : 'ללא תוקף'}</span>
                     <div className="flex gap-1">
@@ -252,7 +334,7 @@ export default function PunchCardsManager() {
                           <CheckCircle size={11} /> תשלום נוסף
                         </button>
                       )}
-                      {card.entriesUsed < card.entriesTotal && (
+                      {canUseEntry && (
                         <button onClick={() => usePunchCardEntry(supabase, card.id).then(loadAll)}
                           className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs cursor-pointer hover:bg-indigo-100">
                           <MinusCircle size={11} /> ניצל
@@ -266,6 +348,39 @@ export default function PunchCardsManager() {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* NEAR END TAB */}
+      {activeTab === 'near_end' && (
+        <div className="space-y-2">
+          {almostDone.length === 0 && <div className="text-center py-10 text-gray-400">אין כרטיסיות לפני סיום 🎉</div>}
+          {almostDone.map(card => {
+            const { cls, label } = getStatus(card);
+            return (
+              <div key={card.id} className="bg-orange-50 border border-orange-100 rounded-xl p-3">
+                <div className="flex items-start justify-between mb-1">
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">{card.customerName}</p>
+                    <p className="text-xs text-gray-500">{card.punchCardName}</p>
+                  </div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${cls}`}>{label}</span>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-[10px] text-gray-500">
+                    {card.measurementType === 'entries'
+                      ? `נשארו ${card.entriesTotal - card.entriesUsed} כניסות`
+                      : card.expiresAt ? `מסתיים ב-${formatDate(card.expiresAt)}` : ''}
+                  </span>
+                  <a href={`https://wa.me/972${(customers.find(c => c.id === card.customerId)?.phone || '').replace(/^0/, '')}?text=${encodeURIComponent(`היי ${card.customerName}! רציתי להזכיר לך שה${card.punchCardName} שלך עומד להסתיים 💪`)}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="text-[10px] bg-green-500 text-white px-3 py-1 rounded-lg font-medium">
+                    שלח תזכורת
+                  </a>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -302,7 +417,7 @@ export default function PunchCardsManager() {
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-sm font-semibold text-gray-700">סוגי כרטיסיות</span>
-            <button onClick={() => { setShowTypeForm(!showTypeForm); setEditingType(null); setTypeForm({ name: '', entriesCount: '10', price: '', validityDays: '' }); }}
+            <button onClick={() => { setShowTypeForm(!showTypeForm); setEditingType(null); setTypeForm({ name: '', measurementType: 'entries', entriesCount: '10', monthsCount: '1', price: '', validityDays: '', nearEndDays: '3' }); }}
               className="flex items-center gap-1 px-3 py-2 bg-indigo-500 text-white rounded-xl text-xs font-medium cursor-pointer">
               <Plus size={13} /> סוג חדש
             </button>
@@ -311,14 +426,51 @@ export default function PunchCardsManager() {
             <div className="bg-indigo-50 rounded-xl p-4 space-y-2.5 border border-indigo-100">
               <input value={typeForm.name} onChange={e => setTypeForm(p => ({...p, name: e.target.value}))}
                 placeholder="שם (למשל: 10 כניסות קבוצתי)" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm" />
-              <div className="grid grid-cols-2 gap-2">
-                <input type="number" value={typeForm.entriesCount} onChange={e => setTypeForm(p => ({...p, entriesCount: e.target.value}))}
-                  placeholder="מספר כניסות" className="px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm" />
-                <input type="number" value={typeForm.price} onChange={e => setTypeForm(p => ({...p, price: e.target.value}))}
-                  placeholder="מחיר ₪" className="px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm" />
+
+              {/* Measurement type selector */}
+              <div>
+                <p className="text-xs text-gray-600 mb-1.5">סוג מדידה</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { key: 'entries', label: 'לפי כניסות' },
+                    { key: 'months', label: 'לפי חודשים' },
+                    { key: 'unlimited', label: 'ללא הגבלה' },
+                  ] as const).map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setTypeForm(p => ({ ...p, measurementType: key }))}
+                      className={`py-2 rounded-lg text-[11px] font-medium transition-colors ${typeForm.measurementType === key ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <input type="number" value={typeForm.validityDays} onChange={e => setTypeForm(p => ({...p, validityDays: e.target.value}))}
-                placeholder="תוקף בימים (ריק = ללא)" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm" />
+
+              {typeForm.measurementType === 'entries' && (
+                <input type="number" value={typeForm.entriesCount} onChange={e => setTypeForm(p => ({...p, entriesCount: e.target.value}))}
+                  placeholder="מספר כניסות" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm" />
+              )}
+
+              {typeForm.measurementType === 'months' && (
+                <input type="number" value={typeForm.monthsCount} onChange={e => setTypeForm(p => ({...p, monthsCount: e.target.value}))}
+                  placeholder="מספר חודשי תוקף" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm" />
+              )}
+
+              {typeForm.measurementType === 'unlimited' && (
+                <input type="number" value={typeForm.validityDays} onChange={e => setTypeForm(p => ({...p, validityDays: e.target.value}))}
+                  placeholder="תוקף בימים (ריק = ללא)" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm" />
+              )}
+
+              <input type="number" value={typeForm.price} onChange={e => setTypeForm(p => ({...p, price: e.target.value}))}
+                placeholder="מחיר ₪" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm" />
+
+              <div>
+                <label className="text-[10px] text-gray-500 block mb-1">התראה &quot;לפני סיום&quot; — כמה ימים לפני פקיעה</label>
+                <input type="number" value={typeForm.nearEndDays} onChange={e => setTypeForm(p => ({...p, nearEndDays: e.target.value}))}
+                  placeholder="3" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm" />
+              </div>
+
               <div className="flex gap-2">
                 <button onClick={saveType} className="flex-1 py-2 bg-indigo-500 text-white rounded-xl text-sm font-medium cursor-pointer">שמור</button>
                 <button onClick={() => { setShowTypeForm(false); setEditingType(null); }} className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium cursor-pointer">ביטול</button>
@@ -327,20 +479,38 @@ export default function PunchCardsManager() {
           )}
           <div className="space-y-2">
             {cardTypes.length === 0 && <p className="text-center text-gray-400 text-sm py-4">אין סוגי כרטיסיות</p>}
-            {cardTypes.map(t => (
-              <div key={t.id} className="bg-white border border-gray-100 rounded-xl p-3 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-800 text-sm">{t.name}</p>
-                  <p className="text-xs text-gray-500">{t.entriesCount} כניסות · ₪{t.price}{t.validityDays ? ` · תוקף ${t.validityDays} יום` : ''}</p>
+            {cardTypes.map(t => {
+              const measureLabel =
+                t.measurementType === 'entries' ? `${t.entriesCount} כניסות` :
+                t.measurementType === 'months' ? `${t.monthsCount ?? ''} חודשים` :
+                'ללא הגבלה';
+              return (
+                <div key={t.id} className="bg-white border border-gray-100 rounded-xl p-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-800 text-sm">{t.name}</p>
+                    <p className="text-xs text-gray-500">{measureLabel} · ₪{t.price}{t.validityDays && t.measurementType !== 'months' ? ` · תוקף ${t.validityDays} יום` : ''}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => {
+                      setEditingType(t);
+                      setTypeForm({
+                        name: t.name,
+                        measurementType: t.measurementType,
+                        entriesCount: String(t.entriesCount),
+                        monthsCount: String(t.monthsCount ?? '1'),
+                        price: String(t.price),
+                        validityDays: t.validityDays ? String(t.validityDays) : '',
+                        nearEndDays: String(t.nearEndDays ?? 3),
+                      });
+                      setShowTypeForm(true);
+                    }}
+                      className="p-1.5 text-gray-400 hover:text-indigo-500 cursor-pointer"><Edit2 size={13} /></button>
+                    <button onClick={() => { if (confirm('למחוק?')) deletePunchCardType(supabase, t.id).then(loadAll); }}
+                      className="p-1.5 text-gray-400 hover:text-red-400 cursor-pointer"><Trash2 size={13} /></button>
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  <button onClick={() => { setEditingType(t); setTypeForm({ name: t.name, entriesCount: String(t.entriesCount), price: String(t.price), validityDays: t.validityDays ? String(t.validityDays) : '' }); setShowTypeForm(true); }}
-                    className="p-1.5 text-gray-400 hover:text-indigo-500 cursor-pointer"><Edit2 size={13} /></button>
-                  <button onClick={() => { if (confirm('למחוק?')) deletePunchCardType(supabase, t.id).then(loadAll); }}
-                    className="p-1.5 text-gray-400 hover:text-red-400 cursor-pointer"><Trash2 size={13} /></button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

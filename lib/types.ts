@@ -126,13 +126,18 @@ export interface MonthlyGoal {
   targetValue: number;
 }
 
+export type PunchCardMeasurementType = 'entries' | 'months' | 'unlimited';
+
 export interface PunchCardType {
   id: string;
   businessId: string;
   name: string;
-  entriesCount: number;
+  measurementType: PunchCardMeasurementType;
+  entriesCount: number; // used when measurementType === 'entries'
+  monthsCount?: number; // used when measurementType === 'months'
   price: number;
-  validityDays?: number;
+  validityDays?: number; // optional extra validity for entries-based
+  nearEndDays?: number; // threshold for "near end" badge (default 3)
   isActive: boolean;
   createdAt: string;
 }
@@ -144,6 +149,7 @@ export interface CustomerPunchCard {
   customerName?: string;
   punchCardTypeId?: string;
   punchCardName: string;
+  measurementType: PunchCardMeasurementType;
   entriesTotal: number;
   entriesUsed: number;
   purchasedAt: string;

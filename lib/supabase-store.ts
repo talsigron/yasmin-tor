@@ -949,26 +949,46 @@ export async function fetchPunchCardTypes(supabase: any, businessId: string): Pr
   if (error) throw error;
   return (data || []).map((r: any) => ({
     id: r.id, businessId: r.business_id, name: r.name,
-    entriesCount: r.entries_count, price: r.price,
-    validityDays: r.validity_days, isActive: r.is_active, createdAt: r.created_at,
+    measurementType: (r.measurement_type || 'entries') as 'entries' | 'months' | 'unlimited',
+    entriesCount: r.entries_count, monthsCount: r.months_count ?? undefined,
+    price: r.price, validityDays: r.validity_days,
+    nearEndDays: r.near_end_days ?? 3,
+    isActive: r.is_active, createdAt: r.created_at,
   }));
 }
 
 export async function createPunchCardType(supabase: any, businessId: string, data: Omit<PunchCardType, 'id' | 'businessId' | 'createdAt'>): Promise<PunchCardType> {
   const { data: row, error } = await supabase
     .from('punch_card_types')
-    .insert({ business_id: businessId, name: data.name, entries_count: data.entriesCount, price: data.price, validity_days: data.validityDays, is_active: data.isActive })
+    .insert({
+      business_id: businessId, name: data.name,
+      measurement_type: data.measurementType || 'entries',
+      entries_count: data.entriesCount, months_count: data.monthsCount ?? null,
+      price: data.price, validity_days: data.validityDays,
+      near_end_days: data.nearEndDays ?? 3,
+      is_active: data.isActive,
+    })
     .select().single();
   if (error) throw error;
-  return { id: row.id, businessId: row.business_id, name: row.name, entriesCount: row.entries_count, price: row.price, validityDays: row.validity_days, isActive: row.is_active, createdAt: row.created_at };
+  return {
+    id: row.id, businessId: row.business_id, name: row.name,
+    measurementType: (row.measurement_type || 'entries') as 'entries' | 'months' | 'unlimited',
+    entriesCount: row.entries_count, monthsCount: row.months_count ?? undefined,
+    price: row.price, validityDays: row.validity_days,
+    nearEndDays: row.near_end_days ?? 3,
+    isActive: row.is_active, createdAt: row.created_at,
+  };
 }
 
 export async function updatePunchCardType(supabase: any, id: string, data: Partial<PunchCardType>): Promise<void> {
   const updates: any = {};
   if (data.name !== undefined) updates.name = data.name;
+  if (data.measurementType !== undefined) updates.measurement_type = data.measurementType;
   if (data.entriesCount !== undefined) updates.entries_count = data.entriesCount;
+  if (data.monthsCount !== undefined) updates.months_count = data.monthsCount;
   if (data.price !== undefined) updates.price = data.price;
   if (data.validityDays !== undefined) updates.validity_days = data.validityDays;
+  if (data.nearEndDays !== undefined) updates.near_end_days = data.nearEndDays;
   if (data.isActive !== undefined) updates.is_active = data.isActive;
   const { error } = await supabase.from('punch_card_types').update(updates).eq('id', id);
   if (error) throw error;
@@ -989,6 +1009,7 @@ export async function fetchCustomerPunchCards(supabase: any, businessId: string,
   return (data || []).map((r: any) => ({
     id: r.id, businessId: r.business_id, customerId: r.customer_id, customerName: r.customer_name,
     punchCardTypeId: r.punch_card_type_id, punchCardName: r.punch_card_name,
+    measurementType: (r.measurement_type || 'entries') as 'entries' | 'months' | 'unlimited',
     entriesTotal: r.entries_total, entriesUsed: r.entries_used,
     purchasedAt: r.purchased_at, expiresAt: r.expires_at,
     isPaid: r.is_paid, paymentMethod: r.payment_method, paidAt: r.paid_at,
@@ -1000,12 +1021,21 @@ export async function createCustomerPunchCard(supabase: any, businessId: string,
   const { data: row, error } = await supabase.from('customer_punch_cards').insert({
     business_id: businessId, customer_id: data.customerId, customer_name: data.customerName,
     punch_card_type_id: data.punchCardTypeId, punch_card_name: data.punchCardName,
+    measurement_type: data.measurementType || 'entries',
     entries_total: data.entriesTotal, entries_used: data.entriesUsed || 0,
     expires_at: data.expiresAt, is_paid: data.isPaid || false,
     payment_method: data.paymentMethod, notes: data.notes,
   }).select().single();
   if (error) throw error;
-  return { id: row.id, businessId: row.business_id, customerId: row.customer_id, customerName: row.customer_name, punchCardTypeId: row.punch_card_type_id, punchCardName: row.punch_card_name, entriesTotal: row.entries_total, entriesUsed: row.entries_used, purchasedAt: row.purchased_at, expiresAt: row.expires_at, isPaid: row.is_paid, paymentMethod: row.payment_method, paidAt: row.paid_at, notes: row.notes, createdAt: row.created_at };
+  return {
+    id: row.id, businessId: row.business_id, customerId: row.customer_id, customerName: row.customer_name,
+    punchCardTypeId: row.punch_card_type_id, punchCardName: row.punch_card_name,
+    measurementType: (row.measurement_type || 'entries') as 'entries' | 'months' | 'unlimited',
+    entriesTotal: row.entries_total, entriesUsed: row.entries_used,
+    purchasedAt: row.purchased_at, expiresAt: row.expires_at,
+    isPaid: row.is_paid, paymentMethod: row.payment_method, paidAt: row.paid_at,
+    notes: row.notes, createdAt: row.created_at,
+  };
 }
 
 export async function markPunchCardPaid(supabase: any, id: string, paymentMethod: string): Promise<void> {
