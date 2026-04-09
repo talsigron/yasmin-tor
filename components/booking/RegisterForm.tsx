@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { registerNewCustomer, uploadHealthDeclaration, fetchAutoApproveSetting } from '@/lib/supabase-store';
+import { useState, useEffect } from 'react';
+import { registerNewCustomer, uploadHealthDeclaration, fetchAutoApproveSetting, fetchPunchCardTypes } from '@/lib/supabase-store';
 import type { CustomerExtendedFields } from '@/lib/supabase-store';
 import { setCurrentCustomer } from '@/lib/store';
 import { useTenant } from '@/contexts/TenantContext';
 import { User, Phone, Clock, Bell, Upload } from 'lucide-react';
+import { PunchCardType } from '@/lib/types';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import DateOfBirthInput from '@/components/ui/DateOfBirthInput';
@@ -43,6 +44,14 @@ export default function RegisterForm({ onComplete }: RegisterFormProps) {
   const [gender, setGender] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [healthFile, setHealthFile] = useState<File | null>(null);
+  const [cardTypes, setCardTypes] = useState<PunchCardType[]>([]);
+  const [selectedCardTypeId, setSelectedCardTypeId] = useState('');
+
+  useEffect(() => {
+    fetchPunchCardTypes(supabase, businessId)
+      .then(types => setCardTypes(types.filter(t => t.isActive)))
+      .catch(() => { /* silent */ });
+  }, [supabase, businessId]);
 
   const brandPrimary = defaultColors.primary;
 
@@ -83,6 +92,38 @@ export default function RegisterForm({ onComplete }: RegisterFormProps) {
         name.trim(), phone.replace(/[-\s]/g, ''),
         notificationGranted, effectiveAutoApprove, extended
       );
+
+      // If a punch card type was selected at registration, create a matching unpaid card
+      if (selectedCardTypeId && customer.id) {
+        try {
+          const type = cardTypes.find(t => t.id === selectedCardTypeId);
+          if (type) {
+            const { createCustomerPunchCard } = await import('@/lib/supabase-store');
+            let expiresAt: string | undefined;
+            if (type.measurementType === 'months' && type.monthsCount) {
+              const d = new Date();
+              d.setMonth(d.getMonth() + type.monthsCount);
+              expiresAt = d.toISOString();
+            } else if (type.validityDays) {
+              expiresAt = new Date(Date.now() + type.validityDays * 86400000).toISOString();
+            }
+            await createCustomerPunchCard(supabase, businessId, {
+              customerId: customer.id,
+              customerName: customer.fullName,
+              punchCardTypeId: type.id,
+              punchCardName: type.name,
+              measurementType: type.measurementType,
+              entriesTotal: type.measurementType === 'entries' ? type.entriesCount : 0,
+              entriesUsed: 0,
+              purchasedAt: new Date().toISOString(),
+              expiresAt,
+              isPaid: false,
+            });
+          }
+        } catch (cardErr) {
+          console.error('Failed to create punch card at registration:', cardErr);
+        }
+      }
 
       // Upload health declaration after customer is created (need customer.id)
       if (isFitness && healthFile && customer.id) {
@@ -179,6 +220,23 @@ export default function RegisterForm({ onComplete }: RegisterFormProps) {
               <option value="check">שיק</option>
             </select>
           </div>
+
+          {cardTypes.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">סוג מוצר</label>
+              <select value={selectedCardTypeId} onChange={(e) => setSelectedCardTypeId(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-white focus:border-mint-400 focus:ring-4 focus:ring-mint-100 focus:outline-none transition-all text-sm text-gray-700">
+                <option value="">לא נבחר</option>
+                {cardTypes.map(t => {
+                  const desc =
+                    t.measurementType === 'entries' ? `${t.entriesCount} כניסות` :
+                    t.measurementType === 'months' ? `${t.monthsCount ?? ''} חודשים` :
+                    'ללא הגבלה';
+                  return <option key={t.id} value={t.id}>{t.name} — {desc} — ₪{t.price}</option>;
+                })}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">הצהרת בריאות</label>
