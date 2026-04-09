@@ -24,6 +24,7 @@ import Input from '@/components/ui/Input';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import { useTenant } from '@/contexts/TenantContext';
 import { addCustomerManually } from '@/lib/supabase-store';
+import CustomerDetailModal from './CustomerDetailModal';
 
 type CustomerTab = 'all' | 'pending';
 
@@ -62,6 +63,7 @@ export default function CustomersView() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [addForm, setAddForm] = useState({ fullName: '', phone: '', dateOfBirth: '', gender: '', idNumber: '', paymentMethod: '', healthDeclarationSigned: false });
   const [addLoading, setAddLoading] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const loading = custLoading || apptLoading;
 
   const pendingCount = customers.filter((c) => c.status === 'pending').length;
@@ -531,18 +533,97 @@ export default function CustomersView() {
         </button>
       </div>
 
-      {/* Stats summary */}
+      {/* Category grid - always visible on main screen */}
       <div className="mb-4">
-        <button
-          onClick={() => setShowStats(!showStats)}
-          className="w-full flex items-center justify-between bg-white border border-gray-100 rounded-xl px-3 py-2.5 cursor-pointer"
-        >
-          <span className="text-xs font-medium text-gray-600 flex items-center gap-1.5">
-            <Activity size={13} className="text-mint-500" />
-            סטטיסטיקות
-          </span>
-          <ChevronDown size={14} className={cn('text-gray-400 transition-transform', showStats && 'rotate-180')} />
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          {/* Row 1 */}
+          <button onClick={() => { setTab('all'); setDrilldown(null); }}
+            className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2',
+              tab === 'all' && !drilldown ? 'bg-mint-100 border-mint-300' : 'bg-mint-50 border-transparent')}>
+            <p className="text-xl font-bold text-mint-700">{approvedCustomers.length}</p>
+            <p className="text-[10px] text-mint-600 flex items-center justify-center gap-1 mt-0.5">
+              <Users size={10} /> כל הלקוחות
+            </p>
+          </button>
+          <button onClick={() => { setTab('pending'); setDrilldown(null); }}
+            className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2 relative',
+              tab === 'pending' ? 'bg-amber-100 border-amber-300' : 'bg-amber-50 border-transparent')}>
+            {pendingCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow-md animate-pulse">
+                {pendingCount}
+              </span>
+            )}
+            <p className="text-xl font-bold text-amber-700">{pendingCount}</p>
+            <p className="text-[10px] text-amber-600 flex items-center justify-center gap-1 mt-0.5">
+              <Clock size={10} /> ממתינים לאישור
+            </p>
+          </button>
+
+          {/* Row 2 */}
+          <button onClick={() => setDrilldown(drilldown === 'new' ? null : 'new')}
+            className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2',
+              drilldown === 'new' ? 'bg-purple-100 border-purple-300' : 'bg-purple-50 border-transparent')}>
+            <p className="text-xl font-bold text-purple-700">{newThisMonth}</p>
+            <p className="text-[10px] text-purple-600 flex items-center justify-center gap-1 mt-0.5">
+              <UserPlus size={10} /> חדשים החודש
+            </p>
+          </button>
+          <button onClick={() => setDrilldown(drilldown === 'active' ? null : 'active')}
+            className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2',
+              drilldown === 'active' ? 'bg-blue-100 border-blue-300' : 'bg-blue-50 border-transparent')}>
+            <p className="text-xl font-bold text-blue-700">{activeThisMonth}</p>
+            <p className="text-[10px] text-blue-600 flex items-center justify-center gap-1 mt-0.5">
+              <Activity size={10} /> פעילים החודש
+            </p>
+          </button>
+          {(drilldown === 'new' || drilldown === 'active') && renderDrilldown()}
+
+          {/* Row 3 */}
+          <button onClick={() => setDrilldown(drilldown === 'inactive_month' ? null : 'inactive_month')}
+            className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2',
+              drilldown === 'inactive_month' ? 'bg-red-100 border-red-300' : 'bg-red-50 border-transparent')}>
+            <p className="text-xl font-bold text-red-700">{inactiveBreakdown.month}</p>
+            <p className="text-[10px] text-red-600 flex items-center justify-center gap-1 mt-0.5">
+              <UserX size={10} /> לקוחות לא פעילים
+            </p>
+          </button>
+          {isFitness ? (
+            <button onClick={() => setDrilldown(drilldown === 'missing' ? null : 'missing')}
+              className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2',
+                drilldown === 'missing' ? 'bg-amber-100 border-amber-300' : 'bg-amber-50 border-transparent')}>
+              <p className="text-xl font-bold text-amber-700">{missingFieldsCount}</p>
+              <p className="text-[10px] text-amber-600 flex items-center justify-center gap-1 mt-0.5">
+                <AlertCircle size={10} /> פרטים חסרים
+              </p>
+            </button>
+          ) : (
+            <div className="bg-gray-50 rounded-xl p-3" />
+          )}
+          {(drilldown === 'inactive_month' || drilldown === 'missing') && renderDrilldown()}
+
+          {/* Row 4 */}
+          <button onClick={() => setDrilldown(drilldown === 'top' ? null : 'top')}
+            className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2',
+              drilldown === 'top' ? 'bg-mint-100 border-mint-300' : 'bg-mint-50/50 border-transparent')}>
+            <p className="text-xl font-bold text-mint-700">{topCustomers.length}</p>
+            <p className="text-[10px] text-mint-600 flex items-center justify-center gap-1 mt-0.5">
+              <Calendar size={10} /> לקוחות מובילים
+            </p>
+          </button>
+          <button onClick={() => { setTab('all'); setDrilldown(null); }}
+            className={cn('rounded-xl p-3 text-center cursor-pointer transition-all border-2',
+              'bg-mint-50 border-transparent')}>
+            <p className="text-xl font-bold text-mint-700">{customers.length}</p>
+            <p className="text-[10px] text-mint-600 flex items-center justify-center gap-1 mt-0.5">
+              <UserCheck size={10} /> לקוחות רשומים
+            </p>
+          </button>
+          {drilldown === 'top' && renderDrilldown()}
+        </div>
+      </div>
+
+      {/* Old stats hidden - kept for reference */}
+      <div className="hidden">
         {showStats && (
           <div className="mt-2 animate-fade-in">
             {/* Tooltip overlay */}
@@ -682,28 +763,10 @@ export default function CustomersView() {
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 mb-4">
-        <button
-          onClick={() => setTab('all')}
-          className={cn(
-            'flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer text-center',
-            tab === 'all'
-              ? 'bg-white text-mint-600 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
-          )}
-        >
-          כל הלקוחות
-        </button>
-        <button
-          onClick={() => setTab('pending')}
-          className={cn(
-            'flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer text-center relative',
-            tab === 'pending'
-              ? 'bg-white text-mint-600 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
-          )}
-        >
+      {/* Old tabs hidden - squares handle tab switching */}
+      <div className="hidden">
+        <button onClick={() => setTab('all')}>all</button>
+        <button onClick={() => setTab('pending')}>
           {labels.pendingTab}
           {pendingCount > 0 && (
             <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
@@ -751,8 +814,8 @@ export default function CustomersView() {
                 className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition-shadow"
               >
                 <div
-                  className={cn('flex items-start justify-between gap-3', isFitness && 'cursor-pointer')}
-                  onClick={() => isFitness && setExpandedId(isExpanded ? null : customer.id)}
+                  className="flex items-start justify-between gap-3 cursor-pointer"
+                  onClick={() => setEditingCustomer(customer)}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -907,6 +970,14 @@ export default function CustomersView() {
             </a>
           </div>
         </div>
+      )}
+
+      {editingCustomer && (
+        <CustomerDetailModal
+          customer={editingCustomer}
+          onClose={() => setEditingCustomer(null)}
+          onSaved={() => { setEditingCustomer(null); window.location.reload(); }}
+        />
       )}
     </div>
   );

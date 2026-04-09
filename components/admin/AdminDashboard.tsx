@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Scissors, Clock, LogOut, Home, Settings, Users, Edit3, Bell, BellOff, CreditCard, Wallet } from 'lucide-react';
+import { Calendar, Clock, LogOut, Home, Users, Edit3, Bell, BellOff, CreditCard, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchPendingCustomers } from '@/lib/supabase-store';
 import { useTenant } from '@/contexts/TenantContext';
@@ -12,7 +12,6 @@ import {
 } from '@/lib/notifications';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import AppointmentsView from './AppointmentsView';
-import ServicesManager from './ServicesManager';
 import ScheduleManager from './ScheduleManager';
 import ProfileEditor from './ProfileEditor';
 import CustomersView from './CustomersView';
@@ -25,7 +24,8 @@ interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type Tab = 'appointments' | 'services' | 'schedule' | 'customers' | 'profile' | 'punch-cards' | 'finance';
+type Tab = 'appointments' | 'customers' | 'profile' | 'punch-cards' | 'finance';
+type AppointmentsSubTab = 'calendar' | 'schedule';
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const { supabase, config } = useTenant();
@@ -35,8 +35,6 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   const tabs: { key: Tab; label: string; icon: typeof Calendar }[] = [
     { key: 'appointments', label: labels.calendar.replace('יומן ', ''), icon: Calendar },
-    { key: 'services', label: labels.services.replace('ה', ''), icon: Scissors },
-    { key: 'schedule', label: 'לו"ז', icon: Clock },
     { key: 'customers', label: labels.customers, icon: Users },
     { key: 'punch-cards', label: 'כרטיסיות', icon: CreditCard },
     { key: 'finance', label: 'כספים', icon: Wallet },
@@ -54,6 +52,8 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     setActiveTab(tab);
     localStorage.setItem(tabStorageKey, tab);
   };
+
+  const [apptSubTab, setApptSubTab] = useState<AppointmentsSubTab>('calendar');
   const [pendingCount, setPendingCount] = useState(0);
   const [notificationsOn, setNotificationsOn] = useState(false);
 
@@ -118,9 +118,34 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       </header>
 
       <div className="max-w-2xl mx-auto px-5 pt-4">
-        {activeTab === 'appointments' && <AppointmentsView />}
-        {activeTab === 'services' && <ServicesManager />}
-        {activeTab === 'schedule' && <ScheduleManager />}
+        {activeTab === 'appointments' && (
+          <div>
+            <div className="flex gap-1 bg-white border border-gray-100 rounded-xl p-1 mb-4">
+              <button
+                onClick={() => setApptSubTab('calendar')}
+                className="flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5"
+                style={{
+                  backgroundColor: apptSubTab === 'calendar' ? brandPrimary : 'transparent',
+                  color: apptSubTab === 'calendar' ? 'white' : '#6B7280',
+                }}
+              >
+                <Calendar size={14} /> יומן
+              </button>
+              <button
+                onClick={() => setApptSubTab('schedule')}
+                className="flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5"
+                style={{
+                  backgroundColor: apptSubTab === 'schedule' ? brandPrimary : 'transparent',
+                  color: apptSubTab === 'schedule' ? 'white' : '#6B7280',
+                }}
+              >
+                <Clock size={14} /> לו&quot;ז
+              </button>
+            </div>
+            {apptSubTab === 'calendar' && <AppointmentsView />}
+            {apptSubTab === 'schedule' && <ScheduleManager />}
+          </div>
+        )}
         {activeTab === 'customers' && <CustomersView />}
         {activeTab === 'punch-cards' && <PunchCardsManager />}
         {activeTab === 'finance' && <FinanceManager />}
