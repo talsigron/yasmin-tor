@@ -1088,6 +1088,11 @@ export async function deleteCustomerPunchCard(supabase: any, id: string): Promis
   if (error) throw error;
 }
 
+export async function deleteCustomer(supabase: any, customerId: string): Promise<void> {
+  const { error } = await supabase.from('customers').delete().eq('id', customerId);
+  if (error) throw error;
+}
+
 // ==================== SHOP ITEMS ====================
 
 export async function fetchShopItems(supabase: any, businessId: string): Promise<ShopItem[]> {

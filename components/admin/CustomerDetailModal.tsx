@@ -11,6 +11,7 @@ import {
   deleteCustomerPunchCard,
   markPunchCardPaid,
   fetchProfile,
+  deleteCustomer,
 } from '@/lib/supabase-store';
 import { X, CreditCard, Trash2, Plus, Save, Phone } from 'lucide-react';
 
@@ -18,9 +19,10 @@ interface Props {
   customer: Customer;
   onClose: () => void;
   onSaved: () => void;
+  onDeleted?: () => void;
 }
 
-export default function CustomerDetailModal({ customer, onClose, onSaved }: Props) {
+export default function CustomerDetailModal({ customer, onClose, onSaved, onDeleted }: Props) {
   const { supabase, config } = useTenant();
   const { businessId, defaultColors } = config;
   const brandPrimary = defaultColors.primary;
@@ -41,6 +43,8 @@ export default function CustomerDetailModal({ customer, onClose, onSaved }: Prop
   const [newCardTypeId, setNewCardTypeId] = useState('');
   const [newCardPaid, setNewCardPaid] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -127,6 +131,18 @@ export default function CustomerDetailModal({ customer, onClose, onSaved }: Prop
     }
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteCustomer(supabase, customer.id);
+      onDeleted?.();
+    } catch (e: any) {
+      setError(e?.message || 'שגיאה במחיקה');
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
   const handleMarkPaid = async (id: string, method: string) => {
     try {
       await markPunchCardPaid(supabase, id, method);
@@ -142,9 +158,26 @@ export default function CustomerDetailModal({ customer, onClose, onSaved }: Prop
       <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-full sm:max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between">
           <h2 className="font-bold text-gray-800">{customer.fullName}</h2>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100">
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            {!confirmDelete ? (
+              <button onClick={() => setConfirmDelete(true)} className="p-1 rounded-full hover:bg-red-50 text-red-400">
+                <Trash2 size={18} />
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-red-600 font-medium">למחוק את הלקוח?</span>
+                <button onClick={handleDelete} disabled={deleting} className="text-xs bg-red-500 text-white px-2 py-1 rounded-lg font-medium disabled:opacity-50">
+                  {deleting ? '...' : 'כן'}
+                </button>
+                <button onClick={() => setConfirmDelete(false)} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-medium">
+                  לא
+                </button>
+              </div>
+            )}
+            <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100">
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="p-4 space-y-4">

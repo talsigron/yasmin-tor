@@ -977,6 +977,7 @@ export default function CustomersView() {
           customer={editingCustomer}
           onClose={() => setEditingCustomer(null)}
           onSaved={() => { setEditingCustomer(null); window.location.reload(); }}
+          onDeleted={() => { setEditingCustomer(null); window.location.reload(); }}
         />
       )}
     </div>
