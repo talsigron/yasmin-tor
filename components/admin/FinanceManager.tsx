@@ -16,7 +16,7 @@ import {
   fetchCustomerById,
 } from '@/lib/supabase-store';
 import { Transaction, Expense, MonthlyGoal, PAYMENT_METHOD_LABELS, PaymentMethods, Customer } from '@/lib/types';
-import { TrendingUp, TrendingDown, Target, Wallet, AlertCircle, Plus, Trash2, ChevronLeft, ChevronRight, BarChart3, Trophy, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Wallet, AlertCircle, Plus, Trash2, ChevronLeft, ChevronRight, BarChart3, Trophy, Sparkles, Pencil } from 'lucide-react';
 import CustomerDetailModal from './CustomerDetailModal';
 
 type Tab = 'overview' | 'income' | 'expenses' | 'debts' | 'goals';
@@ -646,7 +646,9 @@ function GoalsTab({ goals, year, month, currentIncome, currentCustomers, current
   onDelete: (id: string) => Promise<void>;
   brandPrimary: string;
 }) {
-  const kinds: { key: 'income' | 'new_customers' | 'sessions'; label: string; current: number; prefix?: string; suffix?: string }[] = [
+  const [editingKind, setEditingKind] = useState<'income' | 'new_customers' | 'sessions' | null>(null);
+
+  const kinds: { key: 'income' | 'new_customers' | 'sessions'; label: string; current: number; prefix?: string }[] = [
     { key: 'income', label: 'יעד הכנסה חודשי', current: currentIncome, prefix: '₪' },
     { key: 'new_customers', label: 'יעד לקוחות פעילים', current: currentCustomers },
     { key: 'sessions', label: 'יעד מספר אימונים', current: currentSessions },
@@ -657,6 +659,7 @@ function GoalsTab({ goals, year, month, currentIncome, currentCustomers, current
       {kinds.map(k => {
         const goal = goals.find(g => g.kind === k.key);
         const pct = goal ? Math.min(100, (k.current / goal.targetValue) * 100) : 0;
+        const isEditing = editingKind === k.key;
         return (
           <div key={k.key} className="bg-white rounded-xl border border-gray-100 p-4">
             <div className="flex items-center justify-between mb-2">
@@ -664,11 +667,27 @@ function GoalsTab({ goals, year, month, currentIncome, currentCustomers, current
                 <Target size={14} style={{ color: brandPrimary }} />
                 {k.label}
               </span>
-              {goal && (
-                <button onClick={() => onDelete(goal.id)} className="text-gray-300 hover:text-red-500"><Trash2 size={12} /></button>
+              {goal && !isEditing && (
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setEditingKind(k.key)} className="text-gray-300 hover:text-gray-600 active:scale-90 transition-transform"><Pencil size={12} /></button>
+                  <button onClick={() => onDelete(goal.id)} className="text-gray-300 hover:text-red-500 active:scale-90 transition-transform"><Trash2 size={12} /></button>
+                </div>
               )}
             </div>
-            {goal ? (
+            {isEditing ? (
+              <GoalInput
+                kind={k.key}
+                year={year}
+                month={month}
+                initialValue={goal?.targetValue}
+                onSave={async (g) => {
+                  await onSave(g);
+                  setEditingKind(null);
+                }}
+                onCancel={() => setEditingKind(null)}
+                prefix={k.prefix}
+              />
+            ) : goal ? (
               <>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-gray-500">{k.prefix}{k.current.toLocaleString()} מתוך {k.prefix}{goal.targetValue.toLocaleString()}</span>
@@ -688,14 +707,16 @@ function GoalsTab({ goals, year, month, currentIncome, currentCustomers, current
   );
 }
 
-function GoalInput({ kind, year, month, onSave, prefix }: {
+function GoalInput({ kind, year, month, onSave, onCancel, prefix, initialValue }: {
   kind: 'income' | 'new_customers' | 'sessions';
   year: number;
   month: number;
   onSave: (goal: Omit<MonthlyGoal, 'id' | 'businessId'>) => Promise<void>;
+  onCancel?: () => void;
   prefix?: string;
+  initialValue?: number;
 }) {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(initialValue !== undefined ? String(initialValue) : '');
   return (
     <div className="flex gap-2">
       <input
@@ -704,7 +725,16 @@ function GoalInput({ kind, year, month, onSave, prefix }: {
         value={value}
         onChange={e => setValue(e.target.value)}
         className="flex-1 text-sm border border-gray-200 rounded-lg p-2"
+        autoFocus={!!initialValue}
       />
+      {onCancel && (
+        <button
+          onClick={onCancel}
+          className="px-3 py-2 border border-gray-200 text-gray-500 rounded-lg text-xs font-bold"
+        >
+          ביטול
+        </button>
+      )}
       <button
         onClick={async () => {
           if (!value) return;
@@ -713,7 +743,7 @@ function GoalInput({ kind, year, month, onSave, prefix }: {
         }}
         className="px-4 py-2 bg-gray-800 text-white rounded-lg text-xs font-bold"
       >
-        קבע יעד
+        {initialValue !== undefined ? 'עדכן' : 'קבע יעד'}
       </button>
     </div>
   );
