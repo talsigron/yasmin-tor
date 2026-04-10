@@ -155,7 +155,7 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
 
   return (
     <div className="fixed inset-x-0 top-0 bottom-[72px] sm:inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[calc(100vh-72px)] sm:max-h-[90vh] flex flex-col">
+      <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl flex flex-col" style={{ maxHeight: 'calc(100dvh - 72px)' }}>
         <div className="shrink-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between rounded-t-2xl">
           <h2 className="font-bold text-gray-800">{customer.fullName}</h2>
           <div className="flex items-center gap-2">
