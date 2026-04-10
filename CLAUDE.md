@@ -207,6 +207,8 @@ AdminPageContent checks `localStorage.getItem('yasmin_super_admin_session') === 
 אם יש נתון — צריך שיהיה אפשר ללחוץ עליו ולהגיע למקור.
 אל תחכה שיבקשו ממך את המובן מאליו. תציע או תממש.
 
+בכל משימה שאתה מסיים, חשוב ותגיד מה עוד חסר מבחינת חוויית משתמש ומה עוד צריך להוסיף שלא הוזכר.
+
 ## IMPORTANT rules when editing this codebase
 - Always respect the "universal" principle — do NOT hardcode features specific to one business. Add a profile toggle or config field.
 - Hebrew is masculine (זכר) for fitness, feminine for nails. Don't accidentally mix.
