@@ -20,7 +20,7 @@ export default function PunchCardsManager() {
   const [customerCards, setCustomerCards] = useState<CustomerPunchCard[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'cards' | 'near_end' | 'debts' | 'types'>('cards');
+  const [activeTab, setActiveTab] = useState<'cards' | 'near_end' | 'types'>('cards');
 
   const [showTypeForm, setShowTypeForm] = useState(false);
   const [editingType, setEditingType] = useState<PunchCardType | null>(null);
@@ -205,7 +205,7 @@ export default function PunchCardsManager() {
   return (
     <div className="space-y-4">
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <button onClick={() => setActiveTab('cards')} className="bg-green-50 rounded-xl p-3 text-center cursor-pointer">
           <p className="text-2xl font-bold text-green-700">{activeCards.length}</p>
           <p className="text-xs text-green-600 mt-0.5">פעילות</p>
@@ -214,10 +214,6 @@ export default function PunchCardsManager() {
           <p className="text-2xl font-bold text-orange-600">{almostDone.length}</p>
           <p className="text-xs text-orange-500 mt-0.5">לפני סיום</p>
         </button>
-        <button onClick={() => setActiveTab('debts')} className="bg-red-50 rounded-xl p-3 text-center cursor-pointer">
-          <p className="text-2xl font-bold text-red-600">{debtCards.length}</p>
-          <p className="text-xs text-red-500 mt-0.5">חובות</p>
-        </button>
       </div>
 
       {/* Tabs */}
@@ -225,7 +221,6 @@ export default function PunchCardsManager() {
         {([
           ['cards','כרטיסיות'],
           ['near_end',`לפני סיום (${almostDone.length})`],
-          ['debts',`חובות (${debtCards.length})`],
           ['types','סוגים']
         ] as const).map(([key, label]) => (
           <button key={key} onClick={() => setActiveTab(key)}
@@ -377,34 +372,6 @@ export default function PunchCardsManager() {
                     className="text-[10px] bg-green-500 text-white px-3 py-1 rounded-lg font-medium">
                     שלח תזכורת
                   </a>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* DEBTS TAB */}
-      {activeTab === 'debts' && (
-        <div className="space-y-2">
-          {debtCards.length === 0 && <div className="text-center py-10 text-gray-400">אין חובות 🎉</div>}
-          {debtCards.map(card => {
-            const type = cardTypes.find(t => t.id === card.punchCardTypeId);
-            return (
-              <div key={card.id} className="bg-red-50 border border-red-100 rounded-xl p-3">
-                <div className="flex justify-between items-start mb-1">
-                  <p className="font-semibold text-gray-800 text-sm">{card.customerName}</p>
-                  <p className="text-sm font-bold text-red-600">₪{type?.price ?? '?'}</p>
-                </div>
-                <p className="text-xs text-gray-500 mb-3">{card.punchCardName} | {formatDate(card.purchasedAt)}</p>
-                <div className="flex gap-1.5">
-                  {PAYMENT_METHODS.map(m => (
-                    <button key={m} onClick={async () => {
-                      await markPunchCardPaid(supabase, card.id, m);
-                      if (type) await createTransaction(supabase, businessId, { customerId: card.customerId, customerName: card.customerName, description: `תשלום עבור ${card.punchCardName}`, amount: type.price, paymentMethod: m, transactionDate: new Date().toISOString(), referenceType: 'punch_card', referenceId: card.id });
-                      loadAll();
-                    }} className="flex-1 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium cursor-pointer hover:bg-gray-50">{m}</button>
-                  ))}
                 </div>
               </div>
             );

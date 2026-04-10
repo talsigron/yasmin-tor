@@ -12,6 +12,7 @@ import {
   markPunchCardPaid,
   fetchProfile,
   deleteCustomer,
+  createTransaction,
 } from '@/lib/supabase-store';
 import { X, CreditCard, Trash2, Plus, Save, Phone } from 'lucide-react';
 
@@ -45,6 +46,10 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
   const [profile, setProfile] = useState<any>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showPayForCard, setShowPayForCard] = useState<string | null>(null);
+  const [payAmount, setPayAmount] = useState('');
+  const [payMethod, setPayMethod] = useState('מזומן');
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -128,6 +133,38 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
       setCards(cards.filter(c => c.id !== id));
     } catch (e: any) {
       setError(e?.message || 'שגיאה במחיקה');
+    }
+  };
+
+  const handlePay = async () => {
+    if (!showPayForCard) return;
+    const card = cards.find(c => c.id === showPayForCard);
+    const type = cardTypes.find(t => t.id === card?.punchCardTypeId);
+    if (!card || !type) return;
+    setPaying(true);
+    try {
+      const amount = payAmount ? parseFloat(payAmount) : type.price;
+      const isFullPayment = amount >= type.price;
+      if (isFullPayment) await markPunchCardPaid(supabase, showPayForCard, payMethod);
+      await createTransaction(supabase, businessId, {
+        customerId: customer.id,
+        customerName: customer.fullName,
+        description: `תשלום עבור ${card.punchCardName}`,
+        amount,
+        paymentMethod: payMethod,
+        transactionDate: new Date().toISOString(),
+        referenceType: 'punch_card',
+        referenceId: showPayForCard,
+      });
+      const fresh = await fetchCustomerPunchCards(supabase, businessId, customer.id);
+      setCards(fresh);
+      setShowPayForCard(null);
+      setPayAmount('');
+      setPayMethod('מזומן');
+    } catch (e: any) {
+      setError(e?.message || 'שגיאה בתשלום');
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -313,7 +350,12 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
                           {c.isPaid ? (
                             <span className="text-green-600">✓ שולם</span>
                           ) : (
-                            <span className="text-amber-600">⚠ לא שולם</span>
+                            <button
+                              onClick={() => { setShowPayForCard(c.id); setPayAmount(''); setPayMethod('מזומן'); }}
+                              className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg text-[10px] font-medium hover:bg-amber-100"
+                            >
+                              ⚠ לא שולם — גבה
+                            </button>
                           )}
                         </p>
                       </div>
@@ -361,6 +403,57 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
           </button>
         </div>
       </div>
+
+      {/* Payment modal */}
+      {showPayForCard && (() => {
+        const card = cards.find(c => c.id === showPayForCard);
+        const type = cardTypes.find(t => t.id === card?.punchCardTypeId);
+        const fullPrice = type?.price || 0;
+        const entered = payAmount ? parseFloat(payAmount) : fullPrice;
+        const isPartial = payAmount !== '' && entered < fullPrice;
+        const enabledMethods = Object.entries(profile?.paymentMethods ?? { bit: true, cash: true }) as [keyof PaymentMethods, boolean][];
+        const payMethods = [
+          ...enabledMethods.filter(([, v]) => v).map(([k]) => ({ key: k, label: PAYMENT_METHOD_LABELS[k] })),
+          ...(profile?.enablePaybox ? [{ key: 'paybox', label: PAYMENT_METHOD_LABELS.paybox }] : []),
+        ];
+        return (
+          <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4" onClick={() => setShowPayForCard(null)}>
+            <div className="bg-white rounded-2xl p-5 w-full max-w-xs" onClick={e => e.stopPropagation()}>
+              <p className="font-bold text-gray-800 mb-1 text-center">גביית תשלום</p>
+              <p className="text-xs text-gray-500 text-center mb-4">{customer.fullName} — {card?.punchCardName}</p>
+              <label className="text-xs text-gray-600 mb-1 block">סכום לגביה</label>
+              <div className="relative mb-1">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₪</span>
+                <input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)}
+                  placeholder={String(fullPrice)}
+                  className="w-full pr-8 pl-3 py-2.5 rounded-xl border border-gray-200 text-sm text-right" dir="ltr" />
+              </div>
+              {isPartial ? (
+                <p className="text-xs text-orange-500 mb-3 bg-orange-50 rounded-lg px-2 py-1">תשלום חלקי — הכרטיסייה תישאר כ"לא שולם"</p>
+              ) : (
+                <p className="text-xs text-green-600 mb-3">מחיר מלא: ₪{fullPrice}</p>
+              )}
+              <p className="text-xs text-gray-600 mb-2">אמצעי תשלום</p>
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {payMethods.map(m => (
+                  <button key={m.key} onClick={() => setPayMethod(m.label)}
+                    className={`py-2 rounded-xl text-xs font-medium ${payMethod === m.label ? 'text-white' : 'bg-gray-100 text-gray-700'}`}
+                    style={payMethod === m.label ? { backgroundColor: brandPrimary } : {}}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handlePay} disabled={paying}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 ${isPartial ? 'bg-orange-500' : 'bg-green-500'}`}>
+                  {paying ? '...' : isPartial ? 'רשום חלקי' : 'אשר תשלום'}
+                </button>
+                <button onClick={() => setShowPayForCard(null)} className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm">ביטול</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

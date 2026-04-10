@@ -13,9 +13,11 @@ import {
   deleteMonthlyGoal,
   fetchCustomerPunchCards,
   fetchPunchCardTypes,
+  fetchCustomerById,
 } from '@/lib/supabase-store';
-import { Transaction, Expense, MonthlyGoal, PAYMENT_METHOD_LABELS, PaymentMethods } from '@/lib/types';
+import { Transaction, Expense, MonthlyGoal, PAYMENT_METHOD_LABELS, PaymentMethods, Customer } from '@/lib/types';
 import { TrendingUp, TrendingDown, Target, Wallet, AlertCircle, Plus, Trash2, ChevronLeft, ChevronRight, BarChart3, Trophy, Sparkles } from 'lucide-react';
+import CustomerDetailModal from './CustomerDetailModal';
 
 type Tab = 'overview' | 'income' | 'expenses' | 'debts' | 'goals';
 
@@ -29,7 +31,9 @@ export default function FinanceManager() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [goals, setGoals] = useState<MonthlyGoal[]>([]);
-  const [debts, setDebts] = useState<{ customerName: string; amount: number; cardName: string; customerId: string }[]>([]);
+  const [debts, setDebts] = useState<{ customerName: string; amount: number; cardName: string; customerId: string; cardId: string; punchCardTypeId: string }[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [fetchingCustomer, setFetchingCustomer] = useState(false);
   const [projectedIncome, setProjectedIncome] = useState<{ customerName: string; cardName: string; amount: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPicker, setShowPicker] = useState(false);
@@ -68,6 +72,8 @@ export default function FinanceManager() {
             customerName: c.customerName || 'לקוח',
             amount: debt,
             cardName: c.punchCardName,
+            cardId: c.id,
+            punchCardTypeId: c.punchCardTypeId ?? '',
           };
         })
         .filter(d => d.amount > 0);
@@ -175,14 +181,24 @@ export default function FinanceManager() {
 
   // Top spenders this month
   const topSpenders = useMemo(() => {
-    const map: Record<string, { name: string; amount: number }> = {};
+    const map: Record<string, { name: string; amount: number; customerId: string }> = {};
     monthTxs.forEach(t => {
       if (!t.customerId) return;
-      if (!map[t.customerId]) map[t.customerId] = { name: t.customerName || 'לקוח', amount: 0 };
+      if (!map[t.customerId]) map[t.customerId] = { name: t.customerName || 'לקוח', amount: 0, customerId: t.customerId };
       map[t.customerId].amount += Number(t.amount);
     });
     return Object.values(map).sort((a, b) => b.amount - a.amount).slice(0, 3);
   }, [monthTxs]);
+
+  const openCustomer = async (customerId: string) => {
+    setFetchingCustomer(true);
+    try {
+      const c = await fetchCustomerById(supabase, businessId, customerId);
+      if (c) setSelectedCustomer(c);
+    } finally {
+      setFetchingCustomer(false);
+    }
+  };
 
   const prevMonth = () => {
     if (month === 1) { setYearState(year - 1); setMonthState(12); }
@@ -276,9 +292,9 @@ export default function FinanceManager() {
         {([
           { key: 'overview', label: 'סקירה' },
           { key: 'income', label: 'הכנסות' },
-          { key: 'expenses', label: 'הוצאות' },
           { key: 'debts', label: 'חובות' },
           { key: 'goals', label: 'יעדים' },
+          { key: 'expenses', label: 'הוצאות' },
         ] as const).map(t => (
           <button
             key={t.key}
@@ -298,13 +314,13 @@ export default function FinanceManager() {
         <div className="space-y-3">
           {/* Summary cards */}
           <div className="grid grid-cols-2 gap-3">
-            <MetricCard icon={<TrendingUp size={16} />} label="הכנסות" value={`₪${totalIncome.toLocaleString()}`} color="#10B981" />
-            <MetricCard icon={<TrendingDown size={16} />} label="הוצאות" value={`₪${totalExpenses.toLocaleString()}`} color="#EF4444" />
-            <MetricCard icon={<Wallet size={16} />} label="רווח נטו" value={`₪${netProfit.toLocaleString()}`} color={netProfit >= 0 ? '#10B981' : '#EF4444'} />
-            <MetricCard icon={<AlertCircle size={16} />} label="חובות" value={`₪${totalDebts.toLocaleString()}`} color="#F59E0B" />
+            <MetricCard icon={<TrendingUp size={16} />} label="הכנסות" value={`₪${totalIncome.toLocaleString()}`} color="#10B981" onClick={() => setTab('income')} />
+            <MetricCard icon={<TrendingDown size={16} />} label="הוצאות" value={`₪${totalExpenses.toLocaleString()}`} color="#EF4444" onClick={() => setTab('expenses')} />
+            <MetricCard icon={<Wallet size={16} />} label="רווח נטו" value={`₪${netProfit.toLocaleString()}`} color={netProfit >= 0 ? '#10B981' : '#EF4444'} onClick={() => setTab('expenses')} />
+            <MetricCard icon={<AlertCircle size={16} />} label="חובות" value={`₪${totalDebts.toLocaleString()}`} color="#F59E0B" onClick={() => setTab('debts')} />
           </div>
 
-          <MetricCard icon={<BarChart3 size={16} />} label="מחיר ממוצע ללקוח החודש" value={`₪${avgPricePerCustomer.toFixed(0)}`} color={brandPrimary} fullWidth />
+          <MetricCard icon={<BarChart3 size={16} />} label="מחיר ממוצע ללקוח החודש" value={`₪${avgPricePerCustomer.toFixed(0)}`} color={brandPrimary} fullWidth onClick={() => setTab('income')} />
 
           {/* Projected income - only for future/current months */}
           {projectedIncome.length > 0 && (
@@ -368,7 +384,9 @@ export default function FinanceManager() {
               <div className="space-y-2">
                 {topSpenders.map((s, i) => (
                   <div key={i} className="flex justify-between items-center text-xs">
-                    <span className="text-gray-700">{i + 1}. {s.name}</span>
+                    <button onClick={() => openCustomer(s.customerId)} className="text-gray-700 hover:underline cursor-pointer text-right">
+                      {i + 1}. {s.name}
+                    </button>
                     <span className="font-bold" style={{ color: brandPrimary }}>₪{s.amount.toLocaleString()}</span>
                   </div>
                 ))}
@@ -405,7 +423,16 @@ export default function FinanceManager() {
       )}
 
       {tab === 'debts' && (
-        <DebtsTab debts={debts} />
+        <DebtsTab debts={debts} onOpenCustomer={openCustomer} />
+      )}
+
+      {selectedCustomer && (
+        <CustomerDetailModal
+          customer={selectedCustomer}
+          onClose={() => setSelectedCustomer(null)}
+          onSaved={() => { setSelectedCustomer(null); loadData(); }}
+          onDeleted={() => { setSelectedCustomer(null); loadData(); }}
+        />
       )}
 
       {tab === 'goals' && (
@@ -431,9 +458,12 @@ export default function FinanceManager() {
   );
 }
 
-function MetricCard({ icon, label, value, color, fullWidth }: { icon: React.ReactNode; label: string; value: string; color: string; fullWidth?: boolean }) {
+function MetricCard({ icon, label, value, color, fullWidth, onClick }: { icon: React.ReactNode; label: string; value: string; color: string; fullWidth?: boolean; onClick?: () => void }) {
   return (
-    <div className={`bg-white rounded-xl border border-gray-100 p-3 ${fullWidth ? 'col-span-2' : ''}`}>
+    <div
+      className={`bg-white rounded-xl border border-gray-100 p-3 ${fullWidth ? 'col-span-2' : ''} ${onClick ? 'cursor-pointer hover:shadow-md active:scale-[0.98] transition-all' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex items-center gap-1.5 text-gray-500 text-[10px] mb-1">
         <span style={{ color }}>{icon}</span>
         <span>{label}</span>
@@ -573,7 +603,10 @@ function ExpensesTab({ expenses, categories, onAdd, onDelete }: {
   );
 }
 
-function DebtsTab({ debts }: { debts: { customerName: string; amount: number; cardName: string; customerId: string }[] }) {
+function DebtsTab({ debts, onOpenCustomer }: {
+  debts: { customerName: string; amount: number; cardName: string; customerId: string; cardId: string; punchCardTypeId: string }[];
+  onOpenCustomer: (customerId: string) => void;
+}) {
   if (debts.length === 0) {
     return <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-sm text-gray-500">אין חובות פתוחים 🎉</div>;
   }
@@ -585,13 +618,14 @@ function DebtsTab({ debts }: { debts: { customerName: string; amount: number; ca
         <span className="text-lg font-bold text-amber-600">₪{total.toLocaleString()}</span>
       </div>
       {debts.map((d, i) => (
-        <div key={i} className="bg-white rounded-xl border border-gray-100 p-3 flex justify-between items-center">
+        <button key={i} onClick={() => onOpenCustomer(d.customerId)}
+          className="w-full bg-white rounded-xl border border-gray-100 p-3 flex justify-between items-center hover:bg-amber-50 active:scale-[0.98] transition-all cursor-pointer text-right">
           <div>
             <p className="text-sm font-medium text-gray-800">{d.customerName}</p>
             <p className="text-[10px] text-gray-400">{d.cardName}</p>
           </div>
           <span className="text-sm font-bold text-amber-600">₪{d.amount.toLocaleString()}</span>
-        </div>
+        </button>
       ))}
     </div>
   );
