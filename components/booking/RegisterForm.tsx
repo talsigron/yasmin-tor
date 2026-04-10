@@ -6,7 +6,7 @@ import type { CustomerExtendedFields } from '@/lib/supabase-store';
 import { setCurrentCustomer } from '@/lib/store';
 import { useTenant } from '@/contexts/TenantContext';
 import { User, Phone, Clock, Bell, Mail } from 'lucide-react';
-import { PunchCardType } from '@/lib/types';
+import { PunchCardType, PaymentMethods, PAYMENT_METHOD_LABELS } from '@/lib/types';
 import { sendEmail, customerRegisteredEmail } from '@/lib/email';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -266,10 +266,11 @@ export default function RegisterForm({ onComplete }: RegisterFormProps) {
             <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 bg-white focus:border-mint-400 focus:ring-4 focus:ring-mint-100 focus:outline-none transition-all text-sm text-gray-700">
               <option value="">בחר</option>
-              <option value="cash">מזומן</option>
-              <option value="bit">ביט</option>
-              <option value="bank_transfer">העברה בנקאית</option>
-              <option value="check">שיק</option>
+              {(Object.entries(profile?.paymentMethods ?? { bit: true, cash: true }) as [keyof PaymentMethods, boolean][])
+                .filter(([, enabled]) => enabled)
+                .map(([key]) => (
+                  <option key={key} value={key}>{PAYMENT_METHOD_LABELS[key]}</option>
+                ))}
             </select>
             {errors.paymentMethod && <p className="text-xs text-red-500 mt-1">{errors.paymentMethod}</p>}
           </div>
