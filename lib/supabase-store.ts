@@ -1111,10 +1111,15 @@ export async function deleteCustomerPunchCard(supabase: any, id: string): Promis
 
 export async function deleteCustomer(supabase: any, customerId: string, businessId: string): Promise<void> {
   // Delete related records first to avoid foreign key constraint errors
-  await supabase.from('customer_punch_cards').delete().eq('customer_id', customerId);
-  await supabase.from('appointments').delete().eq('customer_id', customerId);
-  const { error } = await supabase.from('customers').delete().eq('id', customerId).eq('business_id', businessId);
+  const { error: pcErr } = await supabase.from('customer_punch_cards').delete().eq('customer_id', customerId);
+  if (pcErr) console.error('[deleteCustomer] punch cards:', pcErr);
+  const { error: apptErr } = await supabase.from('appointments').delete().eq('customer_id', customerId);
+  if (apptErr) console.error('[deleteCustomer] appointments:', apptErr);
+  const { error: txErr } = await supabase.from('transactions').delete().eq('customer_id', customerId);
+  if (txErr) console.error('[deleteCustomer] transactions:', txErr);
+  const { data, error, count } = await supabase.from('customers').delete().eq('id', customerId).eq('business_id', businessId).select();
   if (error) throw error;
+  if (!data || data.length === 0) throw new Error('המחיקה נכשלה — ייתכן שחסרה הרשאת RLS לטבלת customers');
 }
 
 // ==================== SHOP ITEMS ====================
