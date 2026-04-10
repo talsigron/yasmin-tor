@@ -14,6 +14,8 @@ import {
   fetchCustomerPunchCards,
   fetchPunchCardTypes,
   fetchCustomerById,
+  createTransaction,
+  deleteTransaction,
 } from '@/lib/supabase-store';
 import { Transaction, Expense, MonthlyGoal, PAYMENT_METHOD_LABELS, PaymentMethods, Customer } from '@/lib/types';
 import { TrendingUp, TrendingDown, Target, Wallet, AlertCircle, Plus, Trash2, ChevronLeft, ChevronRight, BarChart3, Trophy, Sparkles, Pencil } from 'lucide-react';
@@ -407,7 +409,20 @@ export default function FinanceManager() {
       )}
 
       {tab === 'income' && (
-        <IncomeTab transactions={monthTxs} />
+        <IncomeTab
+          transactions={monthTxs}
+          profile={profile}
+          brandPrimary={brandPrimary}
+          onDelete={async (id) => {
+            await deleteTransaction(supabase, id);
+            await loadData();
+          }}
+          onAdd={async (data) => {
+            await createTransaction(supabase, businessId, data);
+            await loadData();
+          }}
+          onCustomerClick={openCustomer}
+        />
       )}
 
       {tab === 'expenses' && (
@@ -502,27 +517,143 @@ function MonthlyChart({ data, color }: { data: { label: string; income: number; 
   );
 }
 
-function IncomeTab({ transactions }: { transactions: Transaction[] }) {
-  if (transactions.length === 0) {
-    return <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-sm text-gray-500">אין הכנסות החודש</div>;
-  }
-  const total = transactions.reduce((s, t) => s + Number(t.amount), 0);
+function IncomeTab({ transactions, profile, brandPrimary, onDelete, onAdd, onCustomerClick }: {
+  transactions: Transaction[];
+  profile: any;
+  brandPrimary: string;
+  onDelete: (id: string) => Promise<void>;
+  onAdd: (data: Omit<Transaction, 'id' | 'businessId' | 'createdAt'>) => Promise<void>;
+  onCustomerClick: (customerId: string) => void;
+}) {
+  const [filter, setFilter] = useState<string>('all');
+  const [showForm, setShowForm] = useState(false);
+  const [formName, setFormName] = useState('');
+  const [formAmount, setFormAmount] = useState('');
+  const [formMethod, setFormMethod] = useState('מזומן');
+  const [formDesc, setFormDesc] = useState('');
+  const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Collect unique payment methods from transactions
+  const methods = useMemo(() => {
+    const set = new Set<string>();
+    transactions.forEach(t => { if (t.paymentMethod) set.add(t.paymentMethod); });
+    return Array.from(set);
+  }, [transactions]);
+
+  const filtered = filter === 'all' ? transactions : transactions.filter(t => t.paymentMethod === filter);
+  const total = filtered.reduce((s, t) => s + Number(t.amount), 0);
+
+  const enabledMethods = useMemo(() => {
+    const entries = Object.entries(profile?.paymentMethods ?? { bit: true, cash: true }) as [keyof PaymentMethods, boolean][];
+    const arr = entries.filter(([, v]) => v).map(([k]) => ({ key: k, label: PAYMENT_METHOD_LABELS[k] }));
+    if (profile?.enablePaybox) arr.push({ key: 'paybox', label: PAYMENT_METHOD_LABELS.paybox });
+    return arr;
+  }, [profile]);
+
+  const handleAdd = async () => {
+    if (!formAmount) return;
+    await onAdd({
+      customerName: formName || undefined,
+      description: formDesc || 'הכנסה ידנית',
+      amount: parseFloat(formAmount),
+      paymentMethod: formMethod,
+      transactionDate: formDate,
+    });
+    setFormName(''); setFormAmount(''); setFormDesc(''); setShowForm(false);
+    setFormDate(new Date().toISOString().split('T')[0]);
+  };
+
   return (
     <div className="space-y-2">
+      {/* Header with total + add button */}
       <div className="bg-white rounded-xl border border-gray-100 p-3 flex justify-between items-center">
         <span className="text-sm text-gray-600">סה&quot;כ הכנסות</span>
-        <span className="text-lg font-bold text-green-600">₪{total.toLocaleString()}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-lg font-bold text-green-600">₪{total.toLocaleString()}</span>
+          <button onClick={() => setShowForm(!showForm)} className="p-1.5 rounded-lg" style={{ backgroundColor: brandPrimary, color: 'white' }}>
+            <Plus size={14} />
+          </button>
+        </div>
       </div>
-      {transactions.map(t => (
+
+      {/* Add manual income form */}
+      {showForm && (
+        <div className="bg-gray-50 rounded-xl border border-gray-200 p-3 space-y-2">
+          <input value={formName} onChange={e => setFormName(e.target.value)} placeholder="שם לקוח (לא חובה)" className="w-full text-sm border border-gray-200 rounded-lg p-2" />
+          <input value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="תיאור (למשל: אימון פרטי)" className="w-full text-sm border border-gray-200 rounded-lg p-2" />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₪</span>
+              <input type="number" value={formAmount} onChange={e => setFormAmount(e.target.value)} placeholder="סכום" className="w-full pr-8 text-sm border border-gray-200 rounded-lg p-2" />
+            </div>
+            <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="text-sm border border-gray-200 rounded-lg p-2" />
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {enabledMethods.map(m => (
+              <button key={m.key} onClick={() => setFormMethod(m.label)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium ${formMethod === m.label ? 'text-white' : 'bg-white border border-gray-200 text-gray-700'}`}
+                style={formMethod === m.label ? { backgroundColor: brandPrimary } : {}}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleAdd} disabled={!formAmount} className="flex-1 py-2 rounded-lg text-white text-xs font-bold disabled:opacity-50" style={{ backgroundColor: brandPrimary }}>
+              הוסף הכנסה
+            </button>
+            <button onClick={() => setShowForm(false)} className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 text-xs font-bold">
+              ביטול
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Payment method filter */}
+      {methods.length > 1 && (
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
+          <button onClick={() => setFilter('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${filter === 'all' ? 'text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
+            style={filter === 'all' ? { backgroundColor: brandPrimary } : {}}>
+            הכל
+          </button>
+          {methods.map(m => (
+            <button key={m} onClick={() => setFilter(m)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap ${filter === m ? 'text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
+              style={filter === m ? { backgroundColor: brandPrimary } : {}}>
+              {PAYMENT_METHOD_LABELS[m as keyof PaymentMethods] || m}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Transaction list */}
+      {filtered.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-sm text-gray-500">אין הכנסות {filter !== 'all' ? 'בסינון זה' : 'החודש'}</div>
+      ) : filtered.map(t => (
         <div key={t.id} className="bg-white rounded-xl border border-gray-100 p-3 flex justify-between items-start">
-          <div>
-            <p className="text-sm font-medium text-gray-800">{t.customerName || t.description}</p>
+          <div className="flex-1">
+            {t.customerId ? (
+              <button onClick={() => onCustomerClick(t.customerId!)} className="text-sm font-medium text-gray-800 hover:underline text-right">
+                {t.customerName || t.description}
+              </button>
+            ) : (
+              <p className="text-sm font-medium text-gray-800">{t.customerName || t.description}</p>
+            )}
+            {t.description && t.customerName && (
+              <p className="text-[10px] text-gray-400">{t.description}</p>
+            )}
             <p className="text-[10px] text-gray-400">{new Date(t.transactionDate).toLocaleDateString('he-IL')}</p>
             {t.paymentMethod && (
               <p className="text-[10px] text-gray-500">{PAYMENT_METHOD_LABELS[t.paymentMethod as keyof PaymentMethods] || t.paymentMethod}</p>
             )}
           </div>
-          <span className="text-sm font-bold text-green-600">₪{Number(t.amount).toLocaleString()}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-green-600">₪{Number(t.amount).toLocaleString()}</span>
+            <button onClick={async () => { if (confirm('למחוק הכנסה זו?')) await onDelete(t.id); }}
+              className="text-gray-300 hover:text-red-500 active:scale-90 transition-transform">
+              <Trash2 size={13} />
+            </button>
+          </div>
         </div>
       ))}
     </div>
