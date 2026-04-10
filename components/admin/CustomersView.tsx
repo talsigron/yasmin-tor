@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useCustomers, useAppointments, useProfile, useBusinessSettings } from '@/hooks/useSupabase';
-import { Customer } from '@/lib/types';
+import { Customer, PunchCardType, PaymentMethods, PAYMENT_METHOD_LABELS } from '@/lib/types';
 import { cn, formatDate } from '@/lib/utils';
 import {
   Users,
@@ -23,7 +23,7 @@ import {
 import Input from '@/components/ui/Input';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import { useTenant } from '@/contexts/TenantContext';
-import { addCustomerManually } from '@/lib/supabase-store';
+import { addCustomerManually, fetchPunchCardTypes, createCustomerPunchCard, fetchProfile } from '@/lib/supabase-store';
 import CustomerDetailModal from './CustomerDetailModal';
 
 type CustomerTab = 'all' | 'pending';
@@ -61,8 +61,27 @@ export default function CustomersView() {
   const [approvalToast, setApprovalToast] = useState<ApprovalToast | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [addForm, setAddForm] = useState({ fullName: '', phone: '', dateOfBirth: '', gender: '', idNumber: '', paymentMethod: '', healthDeclarationSigned: false });
+  const [addForm, setAddForm] = useState({
+    fullName: '', phone: '', email: '', dateOfBirth: '', gender: '', idNumber: '',
+    paymentMethod: '', healthDeclarationSigned: false, notificationEnabled: true,
+    privacyAccepted: false, punchCardTypeId: '',
+  });
   const [addLoading, setAddLoading] = useState(false);
+  const [addCardTypes, setAddCardTypes] = useState<PunchCardType[]>([]);
+  const [addProfile, setAddProfile] = useState<any>(null);
+  const [addError, setAddError] = useState('');
+
+  useEffect(() => {
+    if (showAddForm && !addProfile) {
+      Promise.all([
+        fetchPunchCardTypes(supabase, businessId),
+        fetchProfile(supabase, businessId),
+      ]).then(([types, prof]) => {
+        setAddCardTypes(types.filter(t => t.isActive));
+        setAddProfile(prof);
+      }).catch(console.error);
+    }
+  }, [showAddForm]);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const loading = custLoading || apptLoading;
 
@@ -311,23 +330,52 @@ export default function CustomersView() {
   };
 
   const handleAddCustomer = async () => {
-    if (!addForm.fullName || !addForm.phone) return;
+    setAddError('');
+    if (!addForm.fullName || addForm.fullName.length < 2) { setAddError('שם מלא חובה (2 תווים לפחות)'); return; }
+    if (!addForm.phone || !/^0\d{8,9}$/.test(addForm.phone)) { setAddError('מספר טלפון לא תקין (למשל 0501234567)'); return; }
+    if (!addForm.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addForm.email)) { setAddError('כתובת מייל לא תקינה'); return; }
+    if (!addForm.privacyAccepted) { setAddError('יש לאשר מדיניות פרטיות'); return; }
+    if (addProfile?.requireHealthDeclaration && !addForm.healthDeclarationSigned) { setAddError('יש לאשר הצהרת בריאות'); return; }
     setAddLoading(true);
     try {
-      await addCustomerManually(supabase, businessId, {
+      const newCustomer = await addCustomerManually(supabase, businessId, {
         fullName: addForm.fullName,
         phone: addForm.phone,
+        email: addForm.email,
         dateOfBirth: addForm.dateOfBirth || undefined,
         gender: addForm.gender || undefined,
         idNumber: addForm.idNumber || undefined,
         paymentMethod: addForm.paymentMethod || undefined,
         healthDeclarationSigned: addForm.healthDeclarationSigned,
+        notificationEnabled: addForm.notificationEnabled,
+        selectedPunchCardTypeId: addForm.punchCardTypeId || undefined,
       });
+      // Create punch card if selected
+      if (addForm.punchCardTypeId) {
+        const type = addCardTypes.find(t => t.id === addForm.punchCardTypeId);
+        if (type) {
+          let expiresAt: string | undefined;
+          if (type.measurementType === 'months' && type.monthsCount) {
+            const d = new Date(); d.setMonth(d.getMonth() + type.monthsCount);
+            expiresAt = d.toISOString();
+          } else if (type.validityDays) {
+            expiresAt = new Date(Date.now() + type.validityDays * 86400000).toISOString();
+          }
+          await createCustomerPunchCard(supabase, businessId, {
+            customerId: newCustomer.id, customerName: newCustomer.fullName,
+            punchCardTypeId: type.id, punchCardName: type.name,
+            measurementType: type.measurementType,
+            entriesTotal: type.measurementType === 'entries' ? type.entriesCount : 0,
+            entriesUsed: 0, purchasedAt: new Date().toISOString(), expiresAt, isPaid: false,
+          });
+        }
+      }
       setShowAddForm(false);
-      setAddForm({ fullName: '', phone: '', dateOfBirth: '', gender: '', idNumber: '', paymentMethod: '', healthDeclarationSigned: false });
+      setAddForm({ fullName: '', phone: '', email: '', dateOfBirth: '', gender: '', idNumber: '', paymentMethod: '', healthDeclarationSigned: false, notificationEnabled: true, privacyAccepted: false, punchCardTypeId: '' });
       window.location.reload();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to add customer:', err);
+      setAddError(err?.message || 'שגיאה בהוספת לקוח');
     } finally {
       setAddLoading(false);
     }
@@ -429,6 +477,7 @@ export default function CustomersView() {
       {showAddForm && (
         <div className="bg-mint-50 border border-mint-200 rounded-xl p-4 mb-4 space-y-3 animate-fade-in">
           <p className="text-xs font-bold text-mint-800">הוספת לקוח ידנית</p>
+          {addError && <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg p-2">{addError}</div>}
           <input
             value={addForm.fullName}
             onChange={e => setAddForm(p => ({...p, fullName: e.target.value}))}
@@ -438,8 +487,16 @@ export default function CustomersView() {
           <input
             value={addForm.phone}
             onChange={e => setAddForm(p => ({...p, phone: e.target.value}))}
-            placeholder="טלפון *"
+            placeholder="טלפון * (למשל 0501234567)"
             type="tel"
+            dir="ltr"
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-left"
+          />
+          <input
+            value={addForm.email}
+            onChange={e => setAddForm(p => ({...p, email: e.target.value}))}
+            placeholder="כתובת מייל *"
+            type="email"
             dir="ltr"
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-left"
           />
@@ -450,7 +507,7 @@ export default function CustomersView() {
               type="text"
               onFocus={e => { e.currentTarget.type = 'date'; }}
               onBlur={e => { if (!e.currentTarget.value) e.currentTarget.type = 'text'; }}
-              placeholder="תאריך לידה DD/MM/YYYY"
+              placeholder="תאריך לידה *"
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm"
             />
           </div>
@@ -459,14 +516,15 @@ export default function CustomersView() {
             onChange={e => setAddForm(p => ({...p, gender: e.target.value}))}
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm"
           >
-            <option value="">— מין (אופציונלי) —</option>
+            <option value="">— מין —</option>
             <option value="male">זכר</option>
             <option value="female">נקבה</option>
+            <option value="other">אחר</option>
           </select>
           <input
             value={addForm.idNumber}
             onChange={e => setAddForm(p => ({...p, idNumber: e.target.value}))}
-            placeholder="מספר ת.ז (אופציונלי)"
+            placeholder="מספר ת.ז"
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm"
             dir="ltr"
           />
@@ -475,30 +533,73 @@ export default function CustomersView() {
             onChange={e => setAddForm(p => ({...p, paymentMethod: e.target.value}))}
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm"
           >
-            <option value="">— אמצעי תשלום (אופציונלי) —</option>
-            <option value="cash">מזומן</option>
-            <option value="bit">ביט</option>
-            <option value="paybox">פייבוקס</option>
+            <option value="">— אמצעי תשלום —</option>
+            {(Object.entries(addProfile?.paymentMethods ?? { bit: true, cash: true }) as [keyof PaymentMethods, boolean][])
+              .filter(([, enabled]) => enabled)
+              .map(([key]) => (
+                <option key={key} value={key}>{PAYMENT_METHOD_LABELS[key]}</option>
+              ))}
+            {addProfile?.enablePaybox && (
+              <option value="paybox">{PAYMENT_METHOD_LABELS.paybox}</option>
+            )}
           </select>
+          {/* Punch card type */}
+          {addCardTypes.length > 0 && (
+            <select
+              value={addForm.punchCardTypeId}
+              onChange={e => setAddForm(p => ({...p, punchCardTypeId: e.target.value}))}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm"
+            >
+              <option value="">— סוג כרטיסייה (לא חובה) —</option>
+              {addCardTypes.map(t => {
+                const desc = t.measurementType === 'entries' ? `${t.entriesCount} כניסות` :
+                  t.measurementType === 'months' ? `${t.monthsCount ?? ''} חודשים` : 'ללא הגבלה';
+                return <option key={t.id} value={t.id}>{t.name} ({desc} — ₪{t.price})</option>;
+              })}
+            </select>
+          )}
+          {/* Health declaration */}
+          {addProfile?.requireHealthDeclaration && (
+            <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
+              <input
+                type="checkbox"
+                checked={addForm.healthDeclarationSigned}
+                onChange={e => setAddForm(p => ({...p, healthDeclarationSigned: e.target.checked}))}
+                className="w-4 h-4 rounded"
+              />
+              חתם/ה על הצהרת בריאות *
+            </label>
+          )}
+          {/* Notifications */}
           <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
             <input
               type="checkbox"
-              checked={addForm.healthDeclarationSigned}
-              onChange={e => setAddForm(p => ({...p, healthDeclarationSigned: e.target.checked}))}
+              checked={addForm.notificationEnabled}
+              onChange={e => setAddForm(p => ({...p, notificationEnabled: e.target.checked}))}
               className="w-4 h-4 rounded"
             />
-            חתם/ה על הצהרת בריאות
+            קבלת עדכונים 🔔
+          </label>
+          {/* Privacy */}
+          <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
+            <input
+              type="checkbox"
+              checked={addForm.privacyAccepted}
+              onChange={e => setAddForm(p => ({...p, privacyAccepted: e.target.checked}))}
+              className="w-4 h-4 rounded"
+            />
+            מאשר/ת מדיניות פרטיות *
           </label>
           <div className="flex gap-2">
             <button
               onClick={handleAddCustomer}
-              disabled={!addForm.fullName || !addForm.phone || addLoading}
+              disabled={addLoading}
               className="flex-1 py-2 bg-mint-500 text-white rounded-xl text-sm font-medium cursor-pointer disabled:opacity-50"
             >
               {addLoading ? 'מוסיף...' : 'הוסף לקוח'}
             </button>
             <button
-              onClick={() => { setShowAddForm(false); setAddForm({ fullName: '', phone: '', dateOfBirth: '', gender: '', idNumber: '', paymentMethod: '', healthDeclarationSigned: false }); }}
+              onClick={() => { setShowAddForm(false); setAddError(''); setAddForm({ fullName: '', phone: '', email: '', dateOfBirth: '', gender: '', idNumber: '', paymentMethod: '', healthDeclarationSigned: false, notificationEnabled: true, privacyAccepted: false, punchCardTypeId: '' }); }}
               className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium cursor-pointer"
             >
               ביטול

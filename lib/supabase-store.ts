@@ -1183,6 +1183,8 @@ export async function addCustomerManually(supabase: any, businessId: string, dat
   idNumber?: string;
   paymentMethod?: string;
   healthDeclarationSigned?: boolean;
+  notificationEnabled?: boolean;
+  selectedPunchCardTypeId?: string;
 }): Promise<Customer> {
   const { data: row, error } = await supabase.from('customers').insert({
     business_id: businessId, full_name: data.fullName, phone: data.phone,
@@ -1190,7 +1192,8 @@ export async function addCustomerManually(supabase: any, businessId: string, dat
     status: 'approved', date_of_birth: data.dateOfBirth || null, gender: data.gender || null,
     id_number: data.idNumber || null, payment_method: data.paymentMethod || null,
     health_declaration_url: data.healthDeclarationSigned ? 'manually_signed' : null,
-    notification_enabled: true,
+    notification_enabled: data.notificationEnabled ?? true,
+    selected_punch_card_type_id: data.selectedPunchCardTypeId || null,
   }).select().single();
   if (error) throw error;
   return {
