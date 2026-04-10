@@ -128,7 +128,7 @@ export default function BookingFlow({ service, onClose }: BookingFlowProps) {
           date: displayDate,
           time: selectedTime,
         });
-        sendEmail({ to: profileData.ownerEmail, subject, html });
+        sendEmail({ to: profileData.ownerEmail, subject, html, fromName: profileData.name });
       }
       // Customer confirmation (note: we don't have customer email in this flow yet — skipping)
 

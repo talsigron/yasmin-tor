@@ -124,7 +124,7 @@ export default function TenantHomePage() {
           date: appt.date,
           time: appt.time,
         });
-        sendEmail({ to: profile.ownerEmail, subject, html });
+        sendEmail({ to: profile.ownerEmail, subject, html, fromName: profile.name });
       }
     } catch (err) {
       console.error('Failed to cancel:', err);

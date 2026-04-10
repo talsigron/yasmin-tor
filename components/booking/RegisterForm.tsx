@@ -182,7 +182,7 @@ export default function RegisterForm({ onComplete }: RegisterFormProps) {
             { businessName: profile.name, brandColor: profile.brandColors?.primary },
             { name: customer.fullName, phone: customer.phone }
           );
-          sendEmail({ to: profile.ownerEmail, subject, html });
+          sendEmail({ to: profile.ownerEmail, subject, html, fromName: profile.name });
         }
       } catch (e) { /* ignore email errors */ }
 
