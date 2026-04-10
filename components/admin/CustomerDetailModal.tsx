@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Customer, CustomerPunchCard, PunchCardType } from '@/lib/types';
+import { Customer, CustomerPunchCard, PunchCardType, PaymentMethods, PAYMENT_METHOD_LABELS } from '@/lib/types';
 import { useTenant } from '@/contexts/TenantContext';
 import {
   updateCustomerProfile,
@@ -10,6 +10,7 @@ import {
   createCustomerPunchCard,
   deleteCustomerPunchCard,
   markPunchCardPaid,
+  fetchProfile,
 } from '@/lib/supabase-store';
 import { X, CreditCard, Trash2, Plus, Save, Phone } from 'lucide-react';
 
@@ -39,16 +40,19 @@ export default function CustomerDetailModal({ customer, onClose, onSaved }: Prop
   const [showAddCard, setShowAddCard] = useState(false);
   const [newCardTypeId, setNewCardTypeId] = useState('');
   const [newCardPaid, setNewCardPaid] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const [c, t] = await Promise.all([
+        const [c, t, p] = await Promise.all([
           fetchCustomerPunchCards(supabase, businessId, customer.id),
           fetchPunchCardTypes(supabase, businessId),
+          fetchProfile(supabase, businessId),
         ]);
         setCards(c);
         setCardTypes(t.filter(ct => ct.isActive));
+        setProfile(p);
       } catch (e: any) {
         console.error(e);
         setError(e?.message || 'שגיאה');
@@ -204,10 +208,14 @@ export default function CustomerDetailModal({ customer, onClose, onSaved }: Prop
                 className="w-full text-sm border border-gray-200 rounded-lg p-2"
               >
                 <option value="">— לא מוגדר —</option>
-                <option value="cash">מזומן</option>
-                <option value="bit">ביט</option>
-                <option value="bank_transfer">העברה בנקאית</option>
-                <option value="check">שיק</option>
+                {(Object.entries(profile?.paymentMethods ?? { bit: true, cash: true }) as [keyof PaymentMethods, boolean][])
+                  .filter(([, enabled]) => enabled)
+                  .map(([key]) => (
+                    <option key={key} value={key}>{PAYMENT_METHOD_LABELS[key]}</option>
+                  ))}
+                {profile?.enablePaybox && (
+                  <option value="paybox">{PAYMENT_METHOD_LABELS.paybox}</option>
+                )}
               </select>
             </div>
           </div>
