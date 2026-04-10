@@ -138,8 +138,8 @@ export default function CustomerDetailModal({ customer, onClose, onSaved }: Prop
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto mb-[72px] sm:mb-0">
+    <div className="fixed inset-x-0 top-0 bottom-[72px] sm:inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
+      <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-full sm:max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between">
           <h2 className="font-bold text-gray-800">{customer.fullName}</h2>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100">

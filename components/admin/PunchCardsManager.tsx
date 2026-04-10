@@ -524,7 +524,7 @@ export default function PunchCardsManager() {
         const remaining = fullPrice - enteredAmount;
         const isPartial = payAmount !== '' && enteredAmount < fullPrice;
         return (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center p-4" onClick={() => { setShowPayModal(null); setPayAmount(''); }}>
+          <div className="fixed inset-x-0 top-0 bottom-[72px] md:inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center p-4" onClick={() => { setShowPayModal(null); setPayAmount(''); }}>
             <div className="bg-white rounded-2xl p-5 w-full max-w-xs" onClick={e => e.stopPropagation()}>
               <p className="font-bold text-gray-800 mb-1 text-center">גביית תשלום</p>
               {modalCard && <p className="text-xs text-gray-500 text-center mb-4">{modalCard.customerName} — {modalCard.punchCardName}</p>}
