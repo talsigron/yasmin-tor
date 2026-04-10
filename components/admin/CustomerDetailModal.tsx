@@ -171,7 +171,7 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await deleteCustomer(supabase, customer.id);
+      await deleteCustomer(supabase, customer.id, businessId);
       onDeleted?.();
     } catch (e: any) {
       setError(e?.message || 'שגיאה במחיקה');
@@ -344,7 +344,11 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
                       <div className="flex-1">
                         <p className="text-sm font-bold text-gray-800">{c.punchCardName}</p>
                         <p className="text-xs text-gray-500">
-                          {c.entriesUsed}/{c.entriesTotal} כניסות
+                          {c.measurementType === 'unlimited'
+                            ? 'ללא הגבלת כניסות'
+                            : c.measurementType === 'months'
+                            ? `כרטיסייה חודשית`
+                            : `${c.entriesUsed}/${c.entriesTotal} כניסות`}
                         </p>
                         <p className="text-[10px] mt-1">
                           {c.isPaid ? (

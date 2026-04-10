@@ -1088,8 +1088,11 @@ export async function deleteCustomerPunchCard(supabase: any, id: string): Promis
   if (error) throw error;
 }
 
-export async function deleteCustomer(supabase: any, customerId: string): Promise<void> {
-  const { error } = await supabase.from('customers').delete().eq('id', customerId);
+export async function deleteCustomer(supabase: any, customerId: string, businessId: string): Promise<void> {
+  // Delete related records first to avoid foreign key constraint errors
+  await supabase.from('customer_punch_cards').delete().eq('customer_id', customerId);
+  await supabase.from('appointments').delete().eq('customer_id', customerId);
+  const { error } = await supabase.from('customers').delete().eq('id', customerId).eq('business_id', businessId);
   if (error) throw error;
 }
 
