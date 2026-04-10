@@ -271,6 +271,9 @@ export default function RegisterForm({ onComplete }: RegisterFormProps) {
                 .map(([key]) => (
                   <option key={key} value={key}>{PAYMENT_METHOD_LABELS[key]}</option>
                 ))}
+              {profile?.enablePaybox && (
+                <option value="paybox">{PAYMENT_METHOD_LABELS.paybox}</option>
+              )}
             </select>
             {errors.paymentMethod && <p className="text-xs text-red-500 mt-1">{errors.paymentMethod}</p>}
           </div>
