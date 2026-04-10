@@ -1085,6 +1085,25 @@ export async function usePunchCardEntry(supabase: any, id: string): Promise<void
   if (error) throw error;
 }
 
+export async function updateCustomerPunchCard(supabase: any, id: string, data: {
+  punchCardTypeId?: string;
+  punchCardName?: string;
+  measurementType?: string;
+  entriesTotal?: number;
+  entriesUsed?: number;
+  expiresAt?: string | null;
+}): Promise<void> {
+  const updates: any = {};
+  if (data.punchCardTypeId !== undefined) updates.punch_card_type_id = data.punchCardTypeId;
+  if (data.punchCardName !== undefined) updates.punch_card_name = data.punchCardName;
+  if (data.measurementType !== undefined) updates.measurement_type = data.measurementType;
+  if (data.entriesTotal !== undefined) updates.entries_total = data.entriesTotal;
+  if (data.entriesUsed !== undefined) updates.entries_used = data.entriesUsed;
+  if (data.expiresAt !== undefined) updates.expires_at = data.expiresAt;
+  const { error } = await supabase.from('customer_punch_cards').update(updates).eq('id', id);
+  if (error) throw error;
+}
+
 export async function deleteCustomerPunchCard(supabase: any, id: string): Promise<void> {
   const { error } = await supabase.from('customer_punch_cards').delete().eq('id', id);
   if (error) throw error;

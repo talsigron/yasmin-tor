@@ -9,12 +9,13 @@ import {
   fetchPunchCardTypes,
   createCustomerPunchCard,
   deleteCustomerPunchCard,
+  updateCustomerPunchCard,
   markPunchCardPaid,
   fetchProfile,
   deleteCustomer,
   createTransaction,
 } from '@/lib/supabase-store';
-import { X, CreditCard, Trash2, Plus, Save, Phone } from 'lucide-react';
+import { X, CreditCard, Trash2, Plus, Save, Phone, Pencil } from 'lucide-react';
 
 interface Props {
   customer: Customer;
@@ -50,6 +51,10 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
   const [payAmount, setPayAmount] = useState('');
   const [payMethod, setPayMethod] = useState('מזומן');
   const [paying, setPaying] = useState(false);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [editCardTypeId, setEditCardTypeId] = useState('');
+  const [editEntriesUsed, setEditEntriesUsed] = useState('');
+  const [savingCard, setSavingCard] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -177,6 +182,53 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
       setError(e?.message || 'שגיאה במחיקה');
       setDeleting(false);
       setConfirmDelete(false);
+    }
+  };
+
+  const startEditCard = (card: CustomerPunchCard) => {
+    setEditingCardId(card.id);
+    setEditCardTypeId(card.punchCardTypeId ?? '');
+    setEditEntriesUsed(String(card.entriesUsed));
+  };
+
+  const handleSaveCardEdit = async () => {
+    if (!editingCardId) return;
+    setSavingCard(true);
+    try {
+      const card = cards.find(c => c.id === editingCardId);
+      if (!card) return;
+      const newType = cardTypes.find(t => t.id === editCardTypeId);
+      const typeChanged = newType && editCardTypeId !== card.punchCardTypeId;
+
+      const updates: Parameters<typeof updateCustomerPunchCard>[2] = {
+        entriesUsed: parseInt(editEntriesUsed) || 0,
+      };
+
+      if (typeChanged && newType) {
+        updates.punchCardTypeId = newType.id;
+        updates.punchCardName = newType.name;
+        updates.measurementType = newType.measurementType;
+        updates.entriesTotal = newType.measurementType === 'entries' ? newType.entriesCount : 0;
+        // Recalc expiry for time-based types
+        if (newType.measurementType === 'months' && newType.monthsCount) {
+          const d = new Date();
+          d.setMonth(d.getMonth() + newType.monthsCount);
+          updates.expiresAt = d.toISOString();
+        } else if (newType.validityDays) {
+          updates.expiresAt = new Date(Date.now() + newType.validityDays * 86400000).toISOString();
+        } else {
+          updates.expiresAt = null;
+        }
+      }
+
+      await updateCustomerPunchCard(supabase, editingCardId, updates);
+      const fresh = await fetchCustomerPunchCards(supabase, businessId, customer.id);
+      setCards(fresh);
+      setEditingCardId(null);
+    } catch (e: any) {
+      setError(e?.message || 'שגיאה בעדכון כרטיסייה');
+    } finally {
+      setSavingCard(false);
     }
   };
 
@@ -340,33 +392,98 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
               <div className="space-y-2">
                 {cards.map(c => (
                   <div key={c.id} className="bg-white border border-gray-100 rounded-lg p-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-gray-800">{c.punchCardName}</p>
-                        <p className="text-xs text-gray-500">
-                          {c.measurementType === 'unlimited'
-                            ? 'ללא הגבלת כניסות'
-                            : c.measurementType === 'months'
-                            ? `כרטיסייה חודשית`
-                            : `${c.entriesUsed}/${c.entriesTotal} כניסות`}
-                        </p>
-                        <p className="text-[10px] mt-1">
-                          {c.isPaid ? (
-                            <span className="text-green-600">✓ שולם</span>
-                          ) : (
-                            <button
-                              onClick={() => { setShowPayForCard(c.id); setPayAmount(''); setPayMethod('מזומן'); }}
-                              className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg text-[10px] font-medium hover:bg-amber-100"
-                            >
-                              ⚠ לא שולם — גבה
-                            </button>
+                    {editingCardId === c.id ? (
+                      /* Edit mode */
+                      <div className="space-y-2">
+                        <label className="text-xs text-gray-500 block">סוג כרטיסייה</label>
+                        <select
+                          value={editCardTypeId}
+                          onChange={e => setEditCardTypeId(e.target.value)}
+                          className="w-full text-sm border border-gray-200 rounded-lg p-2 bg-white"
+                        >
+                          {cardTypes.map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                          {/* Keep current type even if inactive */}
+                          {!cardTypes.find(t => t.id === editCardTypeId) && (
+                            <option value={editCardTypeId}>{c.punchCardName} (לא פעיל)</option>
                           )}
-                        </p>
+                        </select>
+                        {(() => {
+                          const selType = cardTypes.find(t => t.id === editCardTypeId);
+                          const mType = selType?.measurementType ?? c.measurementType;
+                          return mType === 'entries' ? (
+                            <div>
+                              <label className="text-xs text-gray-500 block mb-1">
+                                כניסות שנוצלו (מתוך {selType ? selType.entriesCount : c.entriesTotal})
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                max={selType ? selType.entriesCount : c.entriesTotal}
+                                value={editEntriesUsed}
+                                onChange={e => setEditEntriesUsed(e.target.value)}
+                                className="w-full text-sm border border-gray-200 rounded-lg p-2"
+                              />
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400">
+                              {mType === 'unlimited' ? 'ללא הגבלת כניסות' : 'כרטיסייה חודשית — תאריך תפוגה יתעדכן'}
+                            </p>
+                          );
+                        })()}
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={handleSaveCardEdit}
+                            disabled={savingCard}
+                            className="flex-1 py-2 rounded-lg text-white text-xs font-bold disabled:opacity-50"
+                            style={{ backgroundColor: brandPrimary }}
+                          >
+                            {savingCard ? '...' : 'שמור'}
+                          </button>
+                          <button
+                            onClick={() => setEditingCardId(null)}
+                            className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 text-xs font-bold"
+                          >
+                            ביטול
+                          </button>
+                        </div>
                       </div>
-                      <button onClick={() => handleDeleteCard(c.id)} className="text-gray-300 hover:text-red-500">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                    ) : (
+                      /* Display mode */
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-gray-800">{c.punchCardName}</p>
+                          <p className="text-xs text-gray-500">
+                            {c.measurementType === 'unlimited'
+                              ? 'ללא הגבלת כניסות'
+                              : c.measurementType === 'months'
+                              ? `כרטיסייה חודשית`
+                              : `${c.entriesUsed}/${c.entriesTotal} כניסות`}
+                          </p>
+                          <p className="text-[10px] mt-1">
+                            {c.isPaid ? (
+                              <span className="text-green-600">✓ שולם</span>
+                            ) : (
+                              <button
+                                onClick={() => { setShowPayForCard(c.id); setPayAmount(''); setPayMethod('מזומן'); }}
+                                className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg text-[10px] font-medium hover:bg-amber-100"
+                              >
+                                ⚠ לא שולם — גבה
+                              </button>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => startEditCard(c)} className="text-gray-300 hover:text-gray-600 active:scale-90 transition-transform">
+                            <Pencil size={13} />
+                          </button>
+                          <button onClick={() => handleDeleteCard(c.id)} className="text-gray-300 hover:text-red-500 active:scale-90 transition-transform">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

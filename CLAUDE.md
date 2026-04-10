@@ -201,6 +201,12 @@ AdminPageContent checks `localStorage.getItem('yasmin_super_admin_session') === 
 - Finance month/year picker
 - Projected income widget (from paid cards with expiry)
 
+## עקרון עבודה
+כשאתה בונה פיצ'ר חדש, חשוב על מחזור החיים המלא שלו מנקודת מבט של בעל העסק:
+אם בעל עסק יכול ליצור משהו — הוא כנראה צריך גם לערוך, למחוק, ולראות אותו.
+אם יש נתון — צריך שיהיה אפשר ללחוץ עליו ולהגיע למקור.
+אל תחכה שיבקשו ממך את המובן מאליו. תציע או תממש.
+
 ## IMPORTANT rules when editing this codebase
 - Always respect the "universal" principle — do NOT hardcode features specific to one business. Add a profile toggle or config field.
 - Hebrew is masculine (זכר) for fitness, feminine for nails. Don't accidentally mix.
