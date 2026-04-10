@@ -581,15 +581,23 @@ export default function CustomersView() {
             קבלת עדכונים 🔔
           </label>
           {/* Privacy */}
-          <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-700">
-            <input
-              type="checkbox"
-              checked={addForm.privacyAccepted}
-              onChange={e => setAddForm(p => ({...p, privacyAccepted: e.target.checked}))}
-              className="w-4 h-4 rounded"
-            />
-            מאשר/ת מדיניות פרטיות *
-          </label>
+          <div className="bg-gray-50 rounded-xl p-3">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={addForm.privacyAccepted}
+                onChange={e => setAddForm(p => ({...p, privacyAccepted: e.target.checked}))}
+                className="mt-0.5 w-4 h-4 rounded"
+              />
+              <span className="text-xs text-gray-600 leading-relaxed">
+                מאשר/ת את{' '}
+                <a href={`/${slug}/privacy`} target="_blank" rel="noopener noreferrer" className="underline text-mint-600 hover:opacity-80">
+                  מדיניות הפרטיות
+                </a>
+                {' '}ושמירת הפרטים לצורך קביעת תורים ויצירת קשר *
+              </span>
+            </label>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={handleAddCustomer}
