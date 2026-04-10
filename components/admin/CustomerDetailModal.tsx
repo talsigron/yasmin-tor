@@ -155,8 +155,8 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
 
   return (
     <div className="fixed inset-x-0 top-0 bottom-[72px] sm:inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[calc(100vh-72px)] sm:max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between">
+      <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[calc(100vh-72px)] sm:max-h-[90vh] flex flex-col">
+        <div className="shrink-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between rounded-t-2xl">
           <h2 className="font-bold text-gray-800">{customer.fullName}</h2>
           <div className="flex items-center gap-2">
             {!confirmDelete ? (
@@ -180,7 +180,7 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
           </div>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {error && <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg p-2">{error}</div>}
 
           {/* Basic info */}
@@ -348,8 +348,8 @@ export default function CustomerDetailModal({ customer, onClose, onSaved, onDele
           </div>
         </div>
 
-        {/* Sticky save button */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4">
+        {/* Save button — outside scroll area, always visible */}
+        <div className="shrink-0 bg-white border-t border-gray-100 p-4">
           <button
             onClick={handleSave}
             disabled={saving}
