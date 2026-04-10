@@ -44,7 +44,8 @@ export default function PunchCardsManager() {
   });
 
   const [showAssignForm, setShowAssignForm] = useState(false);
-  const [assignForm, setAssignForm] = useState({ customerId: '', punchCardTypeId: '', isPaid: false, paymentMethod: 'מזומן' });
+  const [assignForm, setAssignForm] = useState({ customerId: '', punchCardTypeId: '', isPaid: false, paymentMethod: 'מזומן', customAmount: '' });
+  const [customerSearch, setCustomerSearch] = useState('');
 
   const [showPayModal, setShowPayModal] = useState<string | null>(null);
   const [payMethod, setPayMethod] = useState<string>('מזומן');
@@ -103,26 +104,31 @@ export default function PunchCardsManager() {
         expiresAt = new Date(Date.now() + type.validityDays * 86400000).toISOString();
       }
 
+      const paidAmount = assignForm.customAmount ? parseFloat(assignForm.customAmount) : type.price;
+      const isFullPayment = paidAmount >= type.price;
       const card = await createCustomerPunchCard(supabase, businessId, {
         customerId: customer.id, customerName: customer.fullName,
         punchCardTypeId: type.id, punchCardName: type.name,
         measurementType: type.measurementType,
         entriesTotal: type.measurementType === 'entries' ? type.entriesCount : 0,
         entriesUsed: 0,
-        isPaid: assignForm.isPaid, paymentMethod: assignForm.isPaid ? assignForm.paymentMethod : undefined,
+        isPaid: assignForm.isPaid && isFullPayment, paymentMethod: assignForm.isPaid ? assignForm.paymentMethod : undefined,
         purchasedAt: new Date().toISOString(), expiresAt,
       });
       if (assignForm.isPaid) {
+        const desc = isFullPayment
+          ? `תשלום עבור ${type.name}`
+          : `תשלום חלקי (₪${paidAmount} מתוך ₪${type.price}) עבור ${type.name}`;
         await createTransaction(supabase, businessId, {
           customerId: customer.id, customerName: customer.fullName,
-          description: `תשלום עבור ${type.name}`,
-          amount: type.price, paymentMethod: assignForm.paymentMethod,
+          description: desc,
+          amount: paidAmount, paymentMethod: assignForm.paymentMethod,
           transactionDate: new Date().toISOString(),
           referenceType: 'punch_card', referenceId: card.id,
         });
       }
       setShowAssignForm(false);
-      setAssignForm({ customerId: '', punchCardTypeId: '', isPaid: false, paymentMethod: 'מזומן' });
+      setAssignForm({ customerId: '', punchCardTypeId: '', isPaid: false, paymentMethod: 'מזומן', customAmount: '' }); setCustomerSearch('');
       loadAll();
     } catch (e) { console.error(e); }
   }
@@ -252,15 +258,37 @@ export default function PunchCardsManager() {
             </button>
           </div>
 
-          {showAssignForm && (
+          {showAssignForm && (() => {
+            const selectedType = cardTypes.find(t => t.id === assignForm.punchCardTypeId);
+            const fullPrice = selectedType?.price || 0;
+            const enteredAmount = assignForm.customAmount ? parseFloat(assignForm.customAmount) : fullPrice;
+            const isPartial = assignForm.customAmount !== '' && enteredAmount < fullPrice;
+            const filteredCustomers = customerSearch
+              ? customers.filter(c => c.fullName.includes(customerSearch) || c.phone.includes(customerSearch))
+              : customers;
+            return (
             <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200">
               <p className="text-xs font-bold text-gray-700">הקצאת כרטיסייה ללקוח</p>
-              <select value={assignForm.customerId} onChange={e => setAssignForm(p => ({...p, customerId: e.target.value}))}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm">
-                <option value="">— בחר לקוח —</option>
-                {customers.map(c => <option key={c.id} value={c.id}>{c.fullName}</option>)}
-              </select>
-              <select value={assignForm.punchCardTypeId} onChange={e => setAssignForm(p => ({...p, punchCardTypeId: e.target.value}))}
+              {/* Customer search + select */}
+              <div className="space-y-1.5">
+                <input
+                  value={customerSearch}
+                  onChange={e => { setCustomerSearch(e.target.value); setAssignForm(p => ({...p, customerId: ''})); }}
+                  placeholder="🔍 חפש לקוח לפי שם או טלפון..."
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm"
+                />
+                {filteredCustomers.length > 0 && (
+                  <select value={assignForm.customerId} onChange={e => setAssignForm(p => ({...p, customerId: e.target.value}))}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm">
+                    <option value="">— בחר לקוח ({filteredCustomers.length}) —</option>
+                    {filteredCustomers.map(c => <option key={c.id} value={c.id}>{c.fullName} · {c.phone}</option>)}
+                  </select>
+                )}
+                {customerSearch && filteredCustomers.length === 0 && (
+                  <p className="text-xs text-gray-400 text-center py-1">לא נמצאו לקוחות</p>
+                )}
+              </div>
+              <select value={assignForm.punchCardTypeId} onChange={e => setAssignForm(p => ({...p, punchCardTypeId: e.target.value, customAmount: ''}))}
                 className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm">
                 <option value="">— בחר סוג כרטיסייה —</option>
                 {cardTypes.filter(t => t.isActive).map(t => {
@@ -276,15 +304,34 @@ export default function PunchCardsManager() {
                 שולם עכשיו
               </label>
               {assignForm.isPaid && (
-                <div className="flex flex-wrap gap-2">
-                  {payMethods.map(m => (
-                    <button key={m.key} onClick={() => setAssignForm(p => ({...p, paymentMethod: m.label}))}
-                      className={`flex-1 min-w-max py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${assignForm.paymentMethod === m.label ? 'text-white' : 'bg-white border border-gray-200 text-gray-700'}`}
-                      style={assignForm.paymentMethod === m.label ? { backgroundColor: brandPrimary } : {}}>
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
+                <>
+                  {/* Amount field */}
+                  {selectedType && (
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">סכום לגביה</label>
+                      <div className="relative">
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₪</span>
+                        <input type="number" value={assignForm.customAmount}
+                          onChange={e => setAssignForm(p => ({...p, customAmount: e.target.value}))}
+                          placeholder={String(fullPrice)}
+                          className="w-full pr-8 pl-3 py-2 rounded-xl border border-gray-200 bg-white text-sm text-right" dir="ltr" />
+                      </div>
+                      {isPartial && (
+                        <p className="text-xs text-orange-500 mt-1 bg-orange-50 rounded-lg px-2 py-1">תשלום חלקי — הכרטיסייה תישאר כ&quot;לא שולם&quot;</p>
+                      )}
+                    </div>
+                  )}
+                  {/* Payment method */}
+                  <div className="flex flex-wrap gap-2">
+                    {payMethods.map(m => (
+                      <button key={m.key} onClick={() => setAssignForm(p => ({...p, paymentMethod: m.label}))}
+                        className={`flex-1 min-w-max py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${assignForm.paymentMethod === m.label ? 'text-white' : 'bg-white border border-gray-200 text-gray-700'}`}
+                        style={assignForm.paymentMethod === m.label ? { backgroundColor: brandPrimary } : {}}>
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
               <div className="flex gap-2">
                 <button onClick={handleAssign} disabled={!assignForm.customerId || !assignForm.punchCardTypeId}
@@ -294,7 +341,8 @@ export default function PunchCardsManager() {
                   className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium cursor-pointer">ביטול</button>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           <div className="space-y-2">
             {customerCards.length === 0 && (
