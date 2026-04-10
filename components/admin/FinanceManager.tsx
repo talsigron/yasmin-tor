@@ -294,11 +294,11 @@ export default function FinanceManager() {
           { key: 'income', label: 'הכנסות' },
           { key: 'debts', label: 'חובות' },
           { key: 'goals', label: 'יעדים' },
-          { key: 'expenses', label: 'הוצאות' },
+          ...(profile?.useExpenses ? [{ key: 'expenses', label: 'הוצאות' }] : []),
         ] as const).map(t => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
+            onClick={() => setTab(t.key as Tab)}
             className="flex-1 min-w-max px-3 py-2 rounded-lg text-xs font-medium transition-all"
             style={{
               backgroundColor: tab === t.key ? brandPrimary : 'transparent',
@@ -315,8 +315,12 @@ export default function FinanceManager() {
           {/* Summary cards */}
           <div className="grid grid-cols-2 gap-3">
             <MetricCard icon={<TrendingUp size={16} />} label="הכנסות" value={`₪${totalIncome.toLocaleString()}`} color="#10B981" onClick={() => setTab('income')} />
-            <MetricCard icon={<TrendingDown size={16} />} label="הוצאות" value={`₪${totalExpenses.toLocaleString()}`} color="#EF4444" onClick={() => setTab('expenses')} />
-            <MetricCard icon={<Wallet size={16} />} label="רווח נטו" value={`₪${netProfit.toLocaleString()}`} color={netProfit >= 0 ? '#10B981' : '#EF4444'} onClick={() => setTab('expenses')} />
+            {profile?.useExpenses && (
+              <MetricCard icon={<TrendingDown size={16} />} label="הוצאות" value={`₪${totalExpenses.toLocaleString()}`} color="#EF4444" onClick={() => setTab('expenses')} />
+            )}
+            {profile?.useExpenses && (
+              <MetricCard icon={<Wallet size={16} />} label="רווח נטו" value={`₪${netProfit.toLocaleString()}`} color={netProfit >= 0 ? '#10B981' : '#EF4444'} onClick={() => setTab('expenses')} />
+            )}
             <MetricCard icon={<AlertCircle size={16} />} label="חובות" value={`₪${totalDebts.toLocaleString()}`} color="#F59E0B" onClick={() => setTab('debts')} />
           </div>
 

@@ -1112,6 +1112,21 @@ export default function ProfileEditor() {
               )}
             </div>
 
+            {/* Expenses feature toggle */}
+            <div className="pt-3 border-t border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">ניהול הוצאות</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">הצג טאב הוצאות ורווח נטו בכספים</p>
+                </div>
+                <button onClick={() => setProfile({ ...profile, useExpenses: !profile.useExpenses })} className="cursor-pointer">
+                  {profile.useExpenses
+                    ? <ToggleRight size={32} className="text-mint-500" />
+                    : <ToggleLeft size={32} className="text-gray-300" />}
+                </button>
+              </div>
+            </div>
+
             {/* Additional payment methods for finance tracking */}
             <div className="pt-3 border-t border-gray-100">
               <p className="text-[11px] text-gray-500 mb-2">אמצעי תשלום נוספים (לפילוח בטאב כספים):</p>

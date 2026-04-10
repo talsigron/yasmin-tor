@@ -189,6 +189,7 @@ export async function fetchProfile(db: SupabaseClient, businessId: string): Prom
     bannerEndTime: data.banner_end_time ? String(data.banner_end_time).slice(0, 5) : undefined,
     bannerDismissible: data.banner_dismissible ?? true,
     paymentMethods: data.payment_methods ?? { bit: true, cash: true },
+    useExpenses: data.use_expenses ?? false,
     expenseCategories: data.expense_categories ?? ['שכירות', 'ציוד', 'חשבונות', 'שיווק', 'שכר', 'אחר'],
     showParticipants: data.show_participants ?? false,
     ownerEmail: data.owner_email ?? undefined,
@@ -233,6 +234,7 @@ export async function updateProfileData(
   if (updates.bannerEndTime !== undefined) row.banner_end_time = updates.bannerEndTime || null;
   if (updates.bannerDismissible !== undefined) row.banner_dismissible = updates.bannerDismissible;
   if (updates.paymentMethods !== undefined) row.payment_methods = updates.paymentMethods;
+  if (updates.useExpenses !== undefined) row.use_expenses = updates.useExpenses;
   if (updates.expenseCategories !== undefined) row.expense_categories = updates.expenseCategories;
   if (updates.showParticipants !== undefined) row.show_participants = updates.showParticipants;
   if (updates.ownerEmail !== undefined) row.owner_email = updates.ownerEmail || null;

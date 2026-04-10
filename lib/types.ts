@@ -87,6 +87,7 @@ export interface BusinessProfile {
   bannerEndTime?: string; // HH:mm or undefined = end of day (23:59)
   bannerDismissible?: boolean;
   paymentMethods?: PaymentMethods;
+  useExpenses?: boolean;
   expenseCategories?: string[];
   showParticipants?: boolean; // show names of existing session attendees in booking flow
   ownerEmail?: string;
