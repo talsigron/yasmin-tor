@@ -9,12 +9,21 @@ import {
   usePunchCardEntry, deleteCustomerPunchCard, fetchCustomers, createTransaction,
 } from '@/lib/supabase-store';
 import { Plus, Edit2, Trash2, CheckCircle, MinusCircle } from 'lucide-react';
-
-const PAYMENT_METHODS = ['מזומן', 'ביט', 'פייבוקס'] as const;
+import { useProfile } from '@/hooks/useSupabase';
+import { PAYMENT_METHOD_LABELS, PaymentMethods } from '@/lib/types';
 
 export default function PunchCardsManager() {
   const { supabase, config } = useTenant();
-  const { businessId } = config;
+  const { businessId, defaultColors } = config;
+  const brandPrimary = defaultColors.primary;
+  const { profile } = useProfile();
+
+  const payMethods = (() => {
+    const entries = Object.entries(profile?.paymentMethods ?? { bit: true, cash: true }) as [keyof PaymentMethods, boolean][];
+    const arr = entries.filter(([, v]) => v).map(([k]) => ({ key: k, label: PAYMENT_METHOD_LABELS[k] }));
+    if (profile?.enablePaybox) arr.push({ key: 'paybox', label: PAYMENT_METHOD_LABELS.paybox });
+    return arr;
+  })();
 
   const [cardTypes, setCardTypes] = useState<PunchCardType[]>([]);
   const [customerCards, setCustomerCards] = useState<CustomerPunchCard[]>([]);
@@ -198,7 +207,7 @@ export default function PunchCardsManager() {
 
   if (loading) return (
     <div className="flex justify-center py-12">
-      <div className="w-6 h-6 rounded-full border-2 border-gray-200 animate-spin" style={{ borderTopColor: '#6366f1' }} />
+      <div className="w-6 h-6 rounded-full border-2 border-gray-200 animate-spin" style={{ borderTopColor: brandPrimary }} />
     </div>
   );
 
@@ -224,7 +233,8 @@ export default function PunchCardsManager() {
           ['types','סוגים']
         ] as const).map(([key, label]) => (
           <button key={key} onClick={() => setActiveTab(key)}
-            className={`flex-1 py-2 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${activeTab === key ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600'}`}>
+            className={`flex-1 py-2 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${activeTab === key ? 'bg-white shadow-sm' : 'text-gray-600'}`}
+            style={activeTab === key ? { color: brandPrimary } : {}}>
             {label}
           </button>
         ))}
@@ -236,14 +246,15 @@ export default function PunchCardsManager() {
           <div className="flex justify-between items-center">
             <span className="text-sm font-semibold text-gray-700">כרטיסיות לקוחות</span>
             <button onClick={() => setShowAssignForm(!showAssignForm)}
-              className="flex items-center gap-1 px-3 py-2 bg-indigo-500 text-white rounded-xl text-xs font-medium cursor-pointer">
+              className="flex items-center gap-1 px-3 py-2 text-white rounded-xl text-xs font-medium cursor-pointer"
+              style={{ backgroundColor: brandPrimary }}>
               <Plus size={13} /> הקצה כרטיסייה
             </button>
           </div>
 
           {showAssignForm && (
-            <div className="bg-indigo-50 rounded-xl p-4 space-y-3 border border-indigo-100">
-              <p className="text-xs font-bold text-indigo-700">הקצאת כרטיסייה ללקוח</p>
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200">
+              <p className="text-xs font-bold text-gray-700">הקצאת כרטיסייה ללקוח</p>
               <select value={assignForm.customerId} onChange={e => setAssignForm(p => ({...p, customerId: e.target.value}))}
                 className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm">
                 <option value="">— בחר לקוח —</option>
@@ -265,18 +276,20 @@ export default function PunchCardsManager() {
                 שולם עכשיו
               </label>
               {assignForm.isPaid && (
-                <div className="flex gap-2">
-                  {PAYMENT_METHODS.map(m => (
-                    <button key={m} onClick={() => setAssignForm(p => ({...p, paymentMethod: m}))}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${assignForm.paymentMethod === m ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}>
-                      {m}
+                <div className="flex flex-wrap gap-2">
+                  {payMethods.map(m => (
+                    <button key={m.key} onClick={() => setAssignForm(p => ({...p, paymentMethod: m.label}))}
+                      className={`flex-1 min-w-max py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${assignForm.paymentMethod === m.label ? 'text-white' : 'bg-white border border-gray-200 text-gray-700'}`}
+                      style={assignForm.paymentMethod === m.label ? { backgroundColor: brandPrimary } : {}}>
+                      {m.label}
                     </button>
                   ))}
                 </div>
               )}
               <div className="flex gap-2">
                 <button onClick={handleAssign} disabled={!assignForm.customerId || !assignForm.punchCardTypeId}
-                  className="flex-1 py-2 bg-indigo-500 text-white rounded-xl text-sm font-medium cursor-pointer disabled:opacity-50">הקצה</button>
+                  className="flex-1 py-2 text-white rounded-xl text-sm font-medium cursor-pointer disabled:opacity-50"
+                  style={{ backgroundColor: brandPrimary }}>הקצה</button>
                 <button onClick={() => setShowAssignForm(false)}
                   className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium cursor-pointer">ביטול</button>
               </div>
@@ -284,7 +297,14 @@ export default function PunchCardsManager() {
           )}
 
           <div className="space-y-2">
-            {customerCards.length === 0 && <p className="text-center text-gray-400 text-sm py-6">אין כרטיסיות עדיין</p>}
+            {customerCards.length === 0 && (
+              <div className="text-center py-8 space-y-2">
+                <p className="text-gray-400 text-sm">אין כרטיסיות עדיין</p>
+                {cardTypes.length === 0 && (
+                  <p className="text-gray-400 text-xs">צור סוגי כרטיסיות בטאב &quot;סוגים&quot; ואז הקצה ללקוחות</p>
+                )}
+              </div>
+            )}
             {customerCards.map(card => {
               const { cls, label } = getStatus(card);
               const isEntries = card.measurementType === 'entries';
@@ -307,7 +327,7 @@ export default function PunchCardsManager() {
                         <span>{card.entriesUsed} שומשו</span>
                         <span>{card.entriesTotal - card.entriesUsed} נשארו מתוך {card.entriesTotal}</span>
                       </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full"><div className="h-full bg-indigo-400 rounded-full" style={{ width: `${pct}%` }} /></div>
+                      <div className="h-1.5 bg-gray-100 rounded-full"><div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: brandPrimary }} /></div>
                     </div>
                   ) : (
                     <div className="mb-2 text-xs text-gray-500">
@@ -325,13 +345,13 @@ export default function PunchCardsManager() {
                       )}
                       {card.isPaid && (
                         <button onClick={() => { setShowPayModal(card.id); setPayMethod('מזומן'); setPayAmount(''); }}
-                          className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs cursor-pointer hover:bg-indigo-100">
+                          className="flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-700 rounded-lg text-xs cursor-pointer hover:bg-gray-100">
                           <CheckCircle size={11} /> תשלום נוסף
                         </button>
                       )}
                       {canUseEntry && (
                         <button onClick={() => usePunchCardEntry(supabase, card.id).then(loadAll)}
-                          className="flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs cursor-pointer hover:bg-indigo-100">
+                          className="flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-700 rounded-lg text-xs cursor-pointer hover:bg-gray-100">
                           <MinusCircle size={11} /> ניצל
                         </button>
                       )}
@@ -385,12 +405,13 @@ export default function PunchCardsManager() {
           <div className="flex justify-between items-center">
             <span className="text-sm font-semibold text-gray-700">סוגי כרטיסיות</span>
             <button onClick={() => { setShowTypeForm(!showTypeForm); setEditingType(null); setTypeForm({ name: '', measurementType: 'entries', entriesCount: '10', monthsCount: '1', price: '', validityDays: '', nearEndDays: '3' }); }}
-              className="flex items-center gap-1 px-3 py-2 bg-indigo-500 text-white rounded-xl text-xs font-medium cursor-pointer">
+              className="flex items-center gap-1 px-3 py-2 text-white rounded-xl text-xs font-medium cursor-pointer"
+              style={{ backgroundColor: brandPrimary }}>
               <Plus size={13} /> סוג חדש
             </button>
           </div>
           {showTypeForm && (
-            <div className="bg-indigo-50 rounded-xl p-4 space-y-2.5 border border-indigo-100">
+            <div className="bg-gray-50 rounded-xl p-4 space-y-2.5 border border-gray-200">
               <input value={typeForm.name} onChange={e => setTypeForm(p => ({...p, name: e.target.value}))}
                 placeholder="שם (למשל: 10 כניסות קבוצתי)" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm" />
 
@@ -406,7 +427,8 @@ export default function PunchCardsManager() {
                     <button
                       key={key}
                       onClick={() => setTypeForm(p => ({ ...p, measurementType: key }))}
-                      className={`py-2 rounded-lg text-[11px] font-medium transition-colors ${typeForm.measurementType === key ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
+                      className={`py-2 rounded-lg text-[11px] font-medium transition-colors ${typeForm.measurementType === key ? 'text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
+                      style={typeForm.measurementType === key ? { backgroundColor: brandPrimary } : {}}
                     >
                       {label}
                     </button>
@@ -439,7 +461,7 @@ export default function PunchCardsManager() {
               </div>
 
               <div className="flex gap-2">
-                <button onClick={saveType} className="flex-1 py-2 bg-indigo-500 text-white rounded-xl text-sm font-medium cursor-pointer">שמור</button>
+                <button onClick={saveType} className="flex-1 py-2 text-white rounded-xl text-sm font-medium cursor-pointer" style={{ backgroundColor: brandPrimary }}>שמור</button>
                 <button onClick={() => { setShowTypeForm(false); setEditingType(null); }} className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium cursor-pointer">ביטול</button>
               </div>
             </div>
@@ -471,7 +493,7 @@ export default function PunchCardsManager() {
                       });
                       setShowTypeForm(true);
                     }}
-                      className="p-1.5 text-gray-400 hover:text-indigo-500 cursor-pointer"><Edit2 size={13} /></button>
+                      className="p-1.5 text-gray-400 hover:text-gray-600 cursor-pointer"><Edit2 size={13} /></button>
                     <button onClick={() => { if (confirm('למחוק?')) deletePunchCardType(supabase, t.id).then(loadAll); }}
                       className="p-1.5 text-gray-400 hover:text-red-400 cursor-pointer"><Trash2 size={13} /></button>
                   </div>
@@ -522,9 +544,10 @@ export default function PunchCardsManager() {
 
               <p className="text-xs text-gray-600 mb-2">אמצעי תשלום</p>
               <div className="grid grid-cols-3 gap-2 mb-4">
-                {PAYMENT_METHODS.map(m => (
-                  <button key={m} onClick={() => setPayMethod(m)}
-                    className={`py-2.5 rounded-xl text-sm font-medium cursor-pointer ${payMethod === m ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-700'}`}>{m}</button>
+                {payMethods.map(m => (
+                  <button key={m.key} onClick={() => setPayMethod(m.label)}
+                    className={`py-2.5 rounded-xl text-sm font-medium cursor-pointer ${payMethod === m.label ? 'text-white' : 'bg-gray-100 text-gray-700'}`}
+                    style={payMethod === m.label ? { backgroundColor: brandPrimary } : {}}>{m.label}</button>
                 ))}
               </div>
               <div className="flex gap-2">
